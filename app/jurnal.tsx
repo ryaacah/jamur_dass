@@ -2,13 +2,14 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BottomNav from "../components/BottomNav";
 import { colors, styles } from "./index.styles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -158,38 +159,6 @@ function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
   );
 }
 
-function BottomNav({ active }: { active?: "home" | "chart" }) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.bottomNavWrapper}>
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={[styles.navItem, active === "home" && styles.navItemActive]}
-          activeOpacity={0.7}
-          onPress={() => router.push("/")}
-        >
-          <Text style={[styles.navIcon, active === "home" && { color: colors.ink }]}>
-            ⌂
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.navDivider} />
-
-        <TouchableOpacity
-          style={[styles.navItem, active === "chart" && styles.navItemActive]}
-          activeOpacity={0.7}
-          onPress={() => router.push("/riwayat_dass")}
-        >
-          <Text style={[styles.navIcon, active === "chart" && { color: colors.ink }]}>
-            ▦
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function JournalScreen() {
   const router = useRouter();
@@ -231,7 +200,7 @@ export default function JournalScreen() {
           <MoodHistoryButton onPress={() => router.push("/tanggal_mood")} />
 
           {/* Reset pikiran card */}
-          <ResetCard />
+          <ResetCard onPress={() => router.push("/pernafasan")} />
 
           {/* Journal input */}
           <JournalInput

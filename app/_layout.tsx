@@ -29,6 +29,10 @@ export default function RootLayout() {
         name="tanggal_mood" 
         options={{ presentation: "transparentModal", animation: "fade" }} 
       />
+      <Stack.Screen 
+        name="tanggal_hasil" 
+        options={{ presentation: "transparentModal", animation: "fade" }} 
+      />
     </Stack>
   );
 }

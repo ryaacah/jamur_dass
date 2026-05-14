@@ -35,6 +35,7 @@ export const colors = {
   accentRed: "#FF8B8B",
   accentPurple: "#F2CCFF",
   accentGreen: "#BEFFA6",
+  accentOrange: "#FFB176",
 
   // Score
   scoreHigh: "#FF8B8B",
@@ -60,6 +61,7 @@ export const colors = {
   googleGreen: '#34A853',
   googleYellow: '#FBBC05',
   googleRed: '#EA4335',
+  scoreNormal: '#EAE2D2',
 };
 
 export const spacing = {
@@ -79,7 +81,10 @@ export const spacing = {
 export const CHART_H = 100;
 
 export const radius = {
-  xl: 12,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
   xxl: 24,
   full: 9999,
 };
@@ -87,16 +92,16 @@ export const radius = {
 export const radii = radius;
 
 export const typography = {
-  display: { fontSize: 28, fontWeight: "700" as const, lineHeight: 34 },
-  headingLg: { fontSize: 20, fontWeight: "700" as const, lineHeight: 25 },
-  headingMd: { fontSize: 16, fontWeight: "700" as const, lineHeight: 21 },
-  bodyMd: { fontSize: 14, fontWeight: "400" as const, lineHeight: 21 },
-  bodyStrong: { fontSize: 14, fontWeight: "600" as const, lineHeight: 21 },
-  bodySm: { fontSize: 12, fontWeight: "400" as const, lineHeight: 17 },
-  bodySmStrong: { fontSize: 12, fontWeight: "600" as const, lineHeight: 17 },
-  labelMood: { fontSize: 10, fontWeight: "500" as const, lineHeight: 10 },
-  buttonMd: { fontSize: 14, fontWeight: "700" as const, lineHeight: 14 },
-  buttonSm: { fontSize: 12, fontWeight: "600" as const, lineHeight: 12 },
+  display: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
+  headingLg: { fontSize: 20, lineHeight: 25, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
+  headingMd: { fontSize: 16, lineHeight: 21, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
+  bodyMd: { fontSize: 14, lineHeight: 21, fontWeight: '400' as const, fontFamily: 'NunitoSans-Regular' },
+  bodyStrong: { fontSize: 14, lineHeight: 21, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
+  bodySm: { fontSize: 12, lineHeight: 17, fontWeight: '400' as const, fontFamily: 'NunitoSans-Regular' },
+  bodySmStrong: { fontSize: 12, lineHeight: 17, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
+  labelMood: { fontSize: 10, lineHeight: 10, fontWeight: '500' as const, fontFamily: 'NunitoSans-Medium' },
+  buttonMd: { fontSize: 14, lineHeight: 14, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
+  buttonSm: { fontSize: 12, lineHeight: 12, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
 };
 
 const cardShadow = {
@@ -179,11 +184,13 @@ export const styles = StyleSheet.create({
   // Calendar
   calendarRow: {
     flexDirection: "row",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 4,
     paddingVertical: 8,
   },
   dayCell: {
-    width: 48,
+    flex: 1,
+    maxWidth: 48,
     height: 60,
     borderRadius: 8,
     borderWidth: 2,
@@ -378,51 +385,36 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingHorizontal: spacing.screenEdge,
-    pointerEvents: 'box-none',
-  } as any,
+    zIndex: 999,
+  },
   bottomNav: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.accentCream,
-    borderRadius: radii.xl,
+        backgroundColor: colors.surfaceCard,
+        borderRadius: radius.full,
     borderWidth: 2,
     borderColor: colors.ink,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    gap: spacing.xl,
-    ...smShadow,
+        padding: 6,
+        gap: 6,
+        shadowColor: colors.ink,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 8,
   },
   navItem: {
-    padding: 8,
-    borderRadius: 12,
+        width: 48,
+        height: 48,
+        borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
-    opacity: 0.6,
+        backgroundColor: "transparent",
+        borderWidth: 2,
+        borderColor: "transparent",
   },
   navItemActive: {
-    backgroundColor: colors.secondaryContainer,
-    opacity: 1,
-  },
-  navIcon: {
-    fontSize: 22,
-    color: colors.onSurfaceVariant,
-  },
-  navIconActive: {
-    fontSize: 22,
-    color: colors.ink,
-  },
-  navButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.ink,
-    opacity: 0.2,
+        backgroundColor: colors.accentYellow,
+        borderColor: colors.ink,
   },
 
   // ── Breathing Area (Pernafasan) ───────────────────────────
@@ -1361,6 +1353,128 @@ export const styles = StyleSheet.create({
   legendLabel: {
     ...typography.labelMood,
     color: colors.inkSoft,
+  },
+
+  // ── Pop-up Keluar & Legacy Options ──
+  progressWrapper: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  optionsContainer: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  optionBtn: {
+    width: '100%',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  optionBtnGreen: {
+    backgroundColor: colors.scoreLow,
+  },
+  optionBtnYellow: {
+    backgroundColor: colors.accentYellow,
+  },
+  optionBtnOrange: {
+    backgroundColor: colors.accentOrange,
+  },
+  optionBtnRed: {
+    backgroundColor: colors.accentRed,
+  },
+  optionBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+    flexShrink: 0,
+  },
+  optionBadgeNumber: {
+    ...typography.headingLg,
+    color: colors.ink,
+  },
+  optionTextGroup: {
+    flex: 1,
+    paddingRight: spacing.xs,
+    paddingVertical: spacing.xs,
+    gap: 2,
+  },
+  optionDesc: {
+    ...typography.bodySm,
+    color: colors.inkSoft,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.screenEdge,
+  },
+  modalTextGroup: {
+    gap: spacing.md,
+    alignItems: 'center',
+  },
+  modalBody: {
+    ...typography.bodyMd,
+    color: colors.ink,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalConfirm: {
+    ...typography.bodyStrong,
+    color: colors.ink,
+    textAlign: 'center',
+    fontWeight: '700',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  modalBtnContinue: {
+    flex: 1,
+    backgroundColor: colors.scoreLow,
+    borderWidth: 1,
+    borderColor: colors.ink,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  modalBtnExit: {
+    flex: 1,
+    backgroundColor: colors.accentRed,
+    borderWidth: 1,
+    borderColor: colors.ink,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  modalBtnText: {
+    ...typography.buttonMd,
+    color: colors.ink,
   },
 });
 

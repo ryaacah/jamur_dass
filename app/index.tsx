@@ -8,6 +8,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BottomNav from "../components/BottomNav";
 import { CHART_H, colors, styles } from "./index.styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -64,11 +65,7 @@ function WeekCalendar({
   onSelect: (date: string) => void;
 }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.calendarRow}
-    >
+    <View style={styles.calendarRow}>
       {WEEK_DAYS.map((item) => {
         const isSelected = item.date === selected;
         return (
@@ -79,7 +76,6 @@ function WeekCalendar({
             style={[
               styles.dayCell,
               { backgroundColor: item.color },
-              isSelected && styles.dayCellSelected,
             ]}
           >
             <Text style={styles.dayLabel}>{item.day}</Text>
@@ -87,7 +83,7 @@ function WeekCalendar({
           </TouchableOpacity>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -98,12 +94,15 @@ function MoodSelector({
   selected: string | null;
   onSelect: (id: string) => void;
 }) {
+  const isAnySelected = selected !== null;
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>Apa yang hari ini kamu rasakan?</Text>
       <View style={styles.moodRow}>
         {MOODS.map((mood) => {
           const isActive = mood.id === selected;
+          const isDimmed = isAnySelected && !isActive;
           return (
             <TouchableOpacity
               key={mood.id}
@@ -114,13 +113,13 @@ function MoodSelector({
               <View
                 style={[
                   styles.moodBubble,
-                  { backgroundColor: mood.color },
+                  { backgroundColor: isDimmed ? colors.surfaceVariant : mood.color },
                   isActive && styles.moodBubbleActive,
                 ]}
               >
                 <Image
                   source={mood.source}
-                  style={styles.moodImage}
+                  style={[styles.moodImage, isDimmed && { opacity: 0.3 }]}
                   contentFit="contain"
                   transition={200}
                 />
@@ -131,6 +130,7 @@ function MoodSelector({
                   isActive
                     ? { color: colors.ink }
                     : { color: colors.inkSoft },
+                  isDimmed && { opacity: 0.6 }
                 ]}
               >
                 {mood.label}
@@ -166,7 +166,11 @@ function QuickActions() {
       </TouchableOpacity>
 
       {/* Pernafasan */}
-      <TouchableOpacity activeOpacity={0.8} style={[styles.card, styles.bentoCell]}>
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        style={[styles.card, styles.bentoCell]}
+        onPress={() => router.push("/pernafasan")}
+      >
         <View style={{ flex: 1 }}>
           <Text style={styles.cardTitle}>Atur pernafasan</Text>
           <Text style={[styles.cardBody, { marginTop: 4 }]}>
@@ -276,42 +280,11 @@ function DassChart() {
   );
 }
 
-function BottomNav({ active }: { active: "home" | "chart" }) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.bottomNavWrapper}>
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={[styles.navItem, active === "home" && styles.navItemActive]}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.navIcon, active === "home" && { color: colors.ink }]}>
-            ⌂
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.navDivider} />
-
-        <TouchableOpacity
-          style={[styles.navItem, active === "chart" && styles.navItemActive]}
-          activeOpacity={0.7}
-          onPress={() => router.push("/riwayat_dass")}
-        >
-          <Text style={[styles.navIcon, active === "chart" && { color: colors.ink }]}>
-            ▦
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function Index() {
   const [selectedDay, setSelectedDay] = useState("12");
-  const [selectedMood, setSelectedMood] = useState<string | null>("senang");
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   return (
     

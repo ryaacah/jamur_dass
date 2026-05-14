@@ -2,13 +2,14 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import BottomNav from '../components/BottomNav';
 import { colors, styles } from './index.styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -95,13 +96,11 @@ function ScoreRow({
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function DassHistoryScreen() {
-  const [activeNav, setActiveNav] = useState<'home' | 'chart'>('chart');
   const [data] = useState<DassData>(MOCK_DATA);
   const router = useRouter();
 
   const handleDateSelect = () => {
-    // TODO: open date picker
-    console.log('Open date picker');
+    router.push('/tanggal_hasil');
   };
 
   return (
@@ -227,30 +226,7 @@ export default function DassHistoryScreen() {
       </ScrollView>
 
       {/* ── Bottom Nav Bar ── */}
-      <View style={styles.bottomNavWrapper}>
-        <View style={styles.bottomNav}>
-          <TouchableOpacity
-            style={[styles.navItem, activeNav === 'home' && styles.navItemActive]}
-            activeOpacity={0.7}
-            onPress={() => router.push('/')}
-          >
-            <Text style={[styles.navIcon, activeNav === 'home' && { color: colors.ink }]}>
-              ⌂
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.navDivider} />
-
-          <TouchableOpacity
-            style={[styles.navItem, activeNav === 'chart' && styles.navItemActive]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.navIcon, activeNav === 'chart' && { color: colors.ink }]}>
-              ▦
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BottomNav active="chart" />
     </SafeAreaView>
   );
 }

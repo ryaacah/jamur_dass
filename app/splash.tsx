@@ -35,8 +35,8 @@ export default function SplashScreen() {
 
         {/* Brand name + tagline */}
         <View style={styles.textBlock}>
-          <Text style={styles.appName}>Mushroom Mood</Text>
-          <Text style={styles.tagline}>Ruang aman untuk perasaanmu.</Text>
+          <Text style={styles.appName}>Naung</Text>
+          <Text style={styles.tagline}>Satu langkah kecil untuk mengenal dirimu lebih dalam.</Text>
         </View>
       </View>
     </SafeAreaView>

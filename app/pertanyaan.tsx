@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
 import { Image, ImageSource } from 'expo-image';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
 import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  BackHandler,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -164,6 +166,17 @@ export default function DASSFormScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<AnswerValue | null>(null);
   const [answers, setAnswers] = useState<AnswerValue[]>([]);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  // Mencegat tombol fisik "back" di perangkat (khususnya Android)
+  useEffect(() => {
+    const onBackPress = () => {
+      setExitModalVisible(true);
+      return true; // Mencegah aksi back bawaan
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, []);
 
   const currentQuestionNumber = currentIndex + 1;
   const totalQuestions = DASS_QUESTIONS.length;
@@ -198,7 +211,7 @@ export default function DASSFormScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerBackButton}
-          onPress={() => router.back()}
+          onPress={() => setExitModalVisible(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Kembali"
@@ -237,6 +250,44 @@ export default function DASSFormScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* ── Pop-up Konfirmasi Keluar ────────────────────────────── */}
+      <Modal
+        visible={exitModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setExitModalVisible(false)} // Menutup pop-up saat tombol back fisik ditekan lagi
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalTextGroup}>
+              <Text style={styles.modalTitle}>Ingin berhenti sejenak?</Text>
+              <Text style={styles.modalBody}>
+                Progres kamu akan hilang jika keluar sekarang. Kami di sini untuk
+                menemanimu menyelesaikan ini.
+              </Text>
+              <Text style={styles.modalConfirm}>Yakin ingin keluar?</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalBtnContinue}
+                onPress={() => setExitModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalBtnText}>Lanjutkan</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalBtnExit}
+                onPress={() => router.replace('/assesmen')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalBtnText}>Keluar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
