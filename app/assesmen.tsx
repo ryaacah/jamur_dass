@@ -1,12 +1,13 @@
 import { MaterialIcons as Icon } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React from "react";
 import { Image } from "expo-image";
+import { Link, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
 import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "./index.styles";
@@ -123,17 +124,18 @@ function Tagline() {
   );
 }
 
-function Footer({ onStart }: { onStart?: () => void }) {
+function Footer() {
   return (
     <View style={styles.assesmenFooter}>
-      <TouchableOpacity
-        style={styles.startBtn}
-        onPress={onStart}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.startBtnText}>Mulai Sekarang</Text>
-        <Text style={styles.startBtnIcon}>›</Text>
-      </TouchableOpacity>
+      <Link href="/pertanyaan" asChild>
+        <TouchableOpacity
+          style={styles.startBtn}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.startBtnText}>Mulai Sekarang</Text>
+          <Text style={styles.startBtnIcon}>›</Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
@@ -144,6 +146,7 @@ export default function Dass21IntroScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
       <View style={styles.wrapper}>
         {/* Sticky header */}
         <Header onBack={() => router.back()} />
@@ -159,7 +162,7 @@ export default function Dass21IntroScreen() {
         </ScrollView>
 
         {/* Fixed CTA footer */}
-        <Footer onStart={() => router.push("/pertanyaan")} />
+        <Footer />
       </View>
     </SafeAreaView>
   );

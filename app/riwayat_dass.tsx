@@ -1,16 +1,18 @@
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
-  StatusBar,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { VictoryAxis, VictoryBar, VictoryChart } from 'victory-native';
 import BottomNav from '../components/BottomNav';
-import { colors, styles } from './index.styles';
+import { BAR_COLORS, colors, styles } from './index.styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ScoreCategory = 'Normal' | 'Ringan' | 'Sedang' | 'Tinggi' | 'Sangat Tinggi';
@@ -19,9 +21,6 @@ interface ScoreItem {
   label: string;
   value: number;
   category: ScoreCategory;
-  /** fraction 0–1 relative to chart height */
-  heightRatio: number;
-  barStyle: object;
 }
 
 interface DassData {
@@ -32,46 +31,18 @@ interface DassData {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-// Category → Y-axis position mapping (0 = bottom = Normal)
-const LEVEL_RATIOS: Record<ScoreCategory, number> = {
-  Normal: 0.15,
-  Ringan: 0.38,
-  Sedang: 0.62,
-  Tinggi: 0.82,
-  'Sangat Tinggi': 0.95,
-};
-
 const MOCK_DATA: DassData = {
   date: '20 Feb 2026',
   scores: [
-    {
-      label: 'Depresi',
-      value: 14,
-      category: 'Sedang',
-      heightRatio: LEVEL_RATIOS['Sedang'],
-      barStyle: styles.barDepresi,
-    },
-    {
-      label: 'Kecemasan',
-      value: 14,
-      category: 'Sedang',
-      heightRatio: LEVEL_RATIOS['Sedang'],
-      barStyle: styles.barKecemasan,
-    },
-    {
-      label: 'Stres',
-      value: 14,
-      category: 'Sedang',
-      heightRatio: LEVEL_RATIOS['Sedang'],
-      barStyle: styles.barStres,
-    },
+    { label: 'Depresi', value: 14, category: 'Sedang' },
+    { label: 'Kecemasan', value: 14, category: 'Sedang' },
+    { label: 'Stres', value: 14, category: 'Sedang' },
   ],
   total: 42,
   totalCategory: 'Sedang',
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
 function ScoreRow({
   label,
   value,
@@ -94,18 +65,32 @@ function ScoreRow({
   );
 }
 
+function ChartLegend() {
+  return (
+    <View style={styles.chartLegendContainer}>
+      {Object.entries(BAR_COLORS).map(([label, color]) => (
+        <View key={label} style={styles.chartLegendItem}>
+          <View style={[styles.chartLegendColorBox, { backgroundColor: color }]} />
+          <Text style={styles.chartLegendLabel}>{label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function DassHistoryScreen() {
   const [data] = useState<DassData>(MOCK_DATA);
   const router = useRouter();
 
-  const handleDateSelect = () => {
-    router.push('/tanggal_hasil');
-  };
+  const chartData = data.scores.map((item) => ({
+    x: item.label,
+    y: item.value,
+  }));
 
   return (
     <SafeAreaView style={styles.wrapper}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -134,7 +119,7 @@ export default function DassHistoryScreen() {
         {/* ── Date Selector ── */}
         <TouchableOpacity
           style={[styles.card, styles.dateSelectorCard]}
-          onPress={handleDateSelect}
+          onPress={() => router.push('/tanggal_hasil')}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={`Pilih tanggal, saat ini ${data.date}`}
@@ -146,50 +131,55 @@ export default function DassHistoryScreen() {
         </TouchableOpacity>
 
         {/* ── Bar Chart Card ── */}
-        <View style={[styles.card, { gap: 16 }]}>
-          <View style={styles.chartContainer}>
-            {/* Y-Axis Labels */}
-            <View style={styles.yAxis}>
-              {(['Tinggi', 'Sedang', 'Ringan', 'Normal'] as const).map((level) => (
-                <Text key={level} style={styles.yLabel}>
-                  {level}
-                </Text>
-              ))}
-            </View>
+        <View style={StyleSheet.flatten([styles.card, styles.chartCard])}>
+          <VictoryChart
+            height={220}
+            domainPadding={{ x: 40 }}
+            padding={{ top: 20, bottom: 40, left: 56, right: 20 }}
+            domain={{ y: [0, 21] }}
+          >
+            {/* Y-Axis */}
+            <VictoryAxis
+              dependentAxis
+              tickValues={[0, 7, 14, 21]}
+              tickFormat={(t: number) => {
+                if (t === 0) return 'Normal';
+                if (t === 7) return 'Ringan';
+                if (t === 14) return 'Sedang';
+                if (t === 21) return 'Tinggi';
+                return '';
+              }}
+              style={{
+                axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
+                tickLabels: { fontSize: 10, fill: colors.ink, fontFamily: 'System' },
+                grid: { stroke: '#E8E0D0', strokeWidth: 0.5, strokeDasharray: '4,4' },
+              }}
+            />
 
-            {/* Chart Area */}
-            <View style={styles.barsArea}>
-              {/* Grid Lines */}
-              {[0, 33, 66, 100].map((pct) => (
-                <View
-                  key={pct}
-                  style={[
-                    styles.gridLine,
-                    { bottom: `${pct}%` as any },
-                  ]}
-                />
-              ))}
+            {/* X-Axis */}
+            <VictoryAxis
+              style={{
+                axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
+                tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: 'System' },
+                grid: { stroke: 'transparent' },
+              }}
+            />
 
-              {/* Bars */}
-              {data.scores.map((item) => {
-                const barHeight = Math.max(100 * item.heightRatio, 16);
-                return (
-                  <View key={item.label} style={styles.barWrapper}>
-                    <View style={[styles.bar, item.barStyle, { height: barHeight }]} />
-                  </View>
-                );
-              })}
-            </View>
-          </View>
+            {/* Bars */}
+            <VictoryBar
+              data={chartData}
+              cornerRadius={{ top: 6 }}
+              style={{
+                data: {
+                  fill: ({ datum }: any) =>
+                    BAR_COLORS[datum?.x] ?? '#C4B49A',
+                  width: 32,
+                },
+              }}
+            />
+          </VictoryChart>
 
-          {/* X-Axis Labels */}
-          <View style={styles.xAxis}>
-            {data.scores.map((item) => (
-              <Text key={item.label} style={styles.xLabel}>
-                {item.label}
-              </Text>
-            ))}
-          </View>
+          <ChartLegend />
         </View>
 
         {/* ── Score Breakdown Card ── */}

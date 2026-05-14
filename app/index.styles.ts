@@ -78,7 +78,11 @@ export const spacing = {
   section: 40,
 };
 
-export const CHART_H = 100;
+export const BAR_COLORS: Record<string, string> = {
+  Depresi: colors.accentRed,
+  Kecemasan: colors.accentYellow,
+  Stres: colors.accentGreen,
+};
 
 export const radius = {
   sm: 4,
@@ -92,16 +96,16 @@ export const radius = {
 export const radii = radius;
 
 export const typography = {
-  display: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
-  headingLg: { fontSize: 20, lineHeight: 25, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
-  headingMd: { fontSize: 16, lineHeight: 21, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
-  bodyMd: { fontSize: 14, lineHeight: 21, fontWeight: '400' as const, fontFamily: 'NunitoSans-Regular' },
-  bodyStrong: { fontSize: 14, lineHeight: 21, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
-  bodySm: { fontSize: 12, lineHeight: 17, fontWeight: '400' as const, fontFamily: 'NunitoSans-Regular' },
-  bodySmStrong: { fontSize: 12, lineHeight: 17, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
-  labelMood: { fontSize: 10, lineHeight: 10, fontWeight: '500' as const, fontFamily: 'NunitoSans-Medium' },
-  buttonMd: { fontSize: 14, lineHeight: 14, fontWeight: '700' as const, fontFamily: 'NunitoSans-Bold' },
-  buttonSm: { fontSize: 12, lineHeight: 12, fontWeight: '600' as const, fontFamily: 'NunitoSans-SemiBold' },
+  display: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  headingLg: { fontSize: 20, lineHeight: 25, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  headingMd: { fontSize: 16, lineHeight: 21, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  bodyMd: { fontSize: 14, lineHeight: 21, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
+  bodyStrong: { fontSize: 14, lineHeight: 21, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
+  bodySm: { fontSize: 12, lineHeight: 17, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
+  bodySmStrong: { fontSize: 12, lineHeight: 17, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
+  labelMood: { fontSize: 10, lineHeight: 10, fontWeight: '500' as const, fontFamily: 'Fredoka_500Medium' },
+  buttonMd: { fontSize: 14, lineHeight: 14, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  buttonSm: { fontSize: 12, lineHeight: 12, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
 };
 
 const cardShadow = {
@@ -307,66 +311,6 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.ink,
     ...cardShadow,
-  },
-
-  // Chart
-  chartContainer: {
-    flexDirection: "row",
-    marginTop: 16,
-    height: CHART_H,
-  },
-  yAxis: {
-    width: 44,
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingRight: 4,
-  },
-  yLabel: {
-    fontSize: 8,
-    fontWeight: "500",
-    color: colors.inkSoft,
-  },
-  barsArea: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    borderLeftWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "rgba(114,121,108,0.3)",
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-    position: "relative",
-  },
-  gridLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: "rgba(114,121,108,0.1)",
-  },
-  barWrapper: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    width: 28,
-  },
-  bar: {
-    width: 16,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: "rgba(71,55,62,0.1)",
-  },
-
-  xAxis: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 44,
-    marginTop: 6,
-  },
-  xLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: colors.inkSoft,
   },
   seeMoreRow: {
     alignItems: "flex-end",
@@ -1265,6 +1209,29 @@ export const styles = StyleSheet.create({
     color: colors.ink,
     textAlign: 'center',
   },
+  chartCard: {
+    gap: 8,
+  },
+  chartLegendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    paddingBottom: 8,
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chartLegendColorBox: {
+    width: 10,
+    height: 10,
+    borderRadius: 3,
+  },
+  chartLegendLabel: {
+    fontSize: 11,
+    color: colors.ink,
+  },
 
   // ── Calendar Modal ───────────────────────────────────────
   modalOverlay: {
@@ -1475,6 +1442,21 @@ export const styles = StyleSheet.create({
   modalBtnText: {
     ...typography.buttonMd,
     color: colors.ink,
+  },
+  breathingPhaseLabelInside: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.ink,
+    textAlign: 'center',
+    fontFamily: 'Fredoka_700Bold',
+  },
+  breathingTimerInside: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: colors.ink,
+    textAlign: 'center',
+    marginTop: 8,
+    fontFamily: 'Fredoka_700Bold',
   },
 });
 

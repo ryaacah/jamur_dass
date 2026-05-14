@@ -1,15 +1,15 @@
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
-  StatusBar,
-  Pressable,
+    Modal,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { styles, colors } from './index.styles';
+import { colors, styles } from './index.styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AnswerOption {
@@ -192,7 +192,7 @@ export default function DassFormScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       {/* Top App Bar */}
       <View style={styles.header}>

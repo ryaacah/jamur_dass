@@ -1,26 +1,23 @@
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { Link } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useMemo, useState } from "react";
 import {
   ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
 import BottomNav from "../components/BottomNav";
-import { CHART_H, colors, styles } from "./index.styles";
+import { BAR_COLORS, colors, styles } from "./index.styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const WEEK_DAYS = [
-  { day: "Sen", date: "06", color: colors.accentYellow, hasLog: true },
-  { day: "Sel", date: "07", color: colors.accentBlue, hasLog: true },
-  { day: "Rab", date: "08", color: colors.accentRed, hasLog: true },
-  { day: "Kam", date: "09", color: colors.accentPurple, hasLog: true },
-  { day: "Jum", date: "10", color: colors.accentGreen, hasLog: true },
-  { day: "Sab", date: "11", color: colors.accentYellow, hasLog: true },
-  { day: "Min", date: "12", color: colors.surfaceCard, hasLog: false },
-];
+const DAY_NAMES = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+const DAY_NAMES_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 const MOODS = [
   {
@@ -60,14 +57,22 @@ const MOODS = [
 function WeekCalendar({
   selected,
   onSelect,
+  selectedMoodColor,
+  weekDays,
 }: {
   selected: string;
   onSelect: (date: string) => void;
+  selectedMoodColor: string | null;
+  weekDays: { day: string; date: string; color: string; hasLog: boolean }[];
 }) {
   return (
     <View style={styles.calendarRow}>
-      {WEEK_DAYS.map((item) => {
+      {weekDays.map((item) => {
         const isSelected = item.date === selected;
+        const bgColor = isSelected 
+          ? (selectedMoodColor || colors.surfaceCard) 
+          : item.color;
+          
         return (
           <TouchableOpacity
             key={item.date}
@@ -75,7 +80,7 @@ function WeekCalendar({
             activeOpacity={0.75}
             style={[
               styles.dayCell,
-              { backgroundColor: item.color },
+              { backgroundColor: bgColor },
             ]}
           >
             <Text style={styles.dayLabel}>{item.day}</Text>
@@ -144,138 +149,133 @@ function MoodSelector({
 }
 
 function QuickActions() {
-  const router = useRouter();
-
   return (
     <View style={styles.bentoGrid}>
       {/* Jurnal */}
-      <TouchableOpacity 
-        activeOpacity={0.8} 
-        style={[styles.card, styles.bentoCell]}
-        onPress={() => router.push("/jurnal")}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Ceritakan Harimu</Text>
-          <Text style={[styles.cardBody, { marginTop: 4 }]}>
-            Ayo buat jurnal harian mu disini..
-          </Text>
-        </View>
-        <View style={styles.chevronRow}>
-          <Text style={styles.chevron}>›</Text>
-        </View>
-      </TouchableOpacity>
+      <Link href="/jurnal" asChild>
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Ceritakan Harimu</Text>
+            <Text style={[styles.cardBody, { marginTop: 4 }]}>
+              Ayo buat jurnal harian mu disini..
+            </Text>
+          </View>
+          <View style={styles.chevronRow}>
+            <Text style={styles.chevron}>›</Text>
+          </View>
+        </TouchableOpacity>
+      </Link>
 
       {/* Pernafasan */}
-      <TouchableOpacity 
-        activeOpacity={0.8} 
-        style={[styles.card, styles.bentoCell]}
-        onPress={() => router.push("/pernafasan")}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Atur pernafasan</Text>
-          <Text style={[styles.cardBody, { marginTop: 4 }]}>
-            Tenangkan pikiran mu, atur pernafasan mu disini...
-          </Text>
-        </View>
-        <View style={styles.chevronRow}>
-          <Text style={styles.chevron}>›</Text>
-        </View>
-      </TouchableOpacity>
+      <Link href="/pernafasan" asChild>
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Atur pernafasan</Text>
+            <Text style={[styles.cardBody, { marginTop: 4 }]}>
+              Tenangkan pikiran mu, atur pernafasan mu disini...
+            </Text>
+          </View>
+          <View style={styles.chevronRow}>
+            <Text style={styles.chevron}>›</Text>
+          </View>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
 
 function DassBanner() {
-  const router = useRouter();
-
   return (
-    <TouchableOpacity 
-      activeOpacity={0.8} 
-      style={[styles.card, styles.bannerRow]}
-      onPress={() => router.push("/assesmen")}
-    >
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>
-          Luangkan Waktu Sejenak untuk Mengenali Dirimu
-        </Text>
-        <Text style={styles.cardBody}>Lakukan tes dengan DASS-21</Text>
-      </View>
-      <Text style={[styles.chevron, { marginLeft: 8 }]}>›</Text>
-    </TouchableOpacity>
+    <Link href="/assesmen" asChild>
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        style={StyleSheet.flatten([styles.card, styles.bannerRow])}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>
+            Luangkan Waktu Sejenak untuk Mengenali Dirimu
+          </Text>
+          <Text style={styles.cardBody}>Lakukan tes dengan DASS-21</Text>
+        </View>
+        <Text style={[styles.chevron, { marginLeft: 8 }]}>›</Text>
+      </TouchableOpacity>
+    </Link>
   );
 }
 
-// Simple bar chart for DASS-21 history
-const DASS_DATA = [
-  { label: "Depresi", color: colors.scoreHigh, heightPct: 0.75 },
-  { label: "Anxiety", color: colors.scoreLow, heightPct: 0.25 },
-  { label: "Stres", color: colors.scoreMedium, heightPct: 0.85 },
+// Data dummy untuk ringkasan DASS-21
+const SUMMARY_CHART_DATA = [
+  { x: "Depresi", y: 16 },
+  { x: "Kecemasan", y: 5 },
+  { x: "Stres", y: 18 },
 ];
-const Y_LABELS = ["Tinggi", "Sedang", "Ringan", "Normal"];
 
 function DassChart() {
-  const router = useRouter();
-
   return (
-    <View style={styles.mutableCard}>
+    <View style={StyleSheet.flatten([styles.mutableCard, styles.chartCard])}>
       <Text style={styles.cardTitle}>Riwayat Skor DASS-21</Text>
 
       {/* Chart area */}
-      <View style={styles.chartContainer}>
-        {/* Y-axis labels */}
-        <View style={styles.yAxis}>
-          {Y_LABELS.map((l) => (
-            <Text key={l} style={styles.yLabel}>
-              {l}
-            </Text>
-          ))}
-        </View>
+      <VictoryChart
+        height={220}
+        domainPadding={{ x: 40 }}
+        padding={{ top: 20, bottom: 40, left: 56, right: 20 }}
+        domain={{ y: [0, 21] }}
+      >
+        {/* Y-Axis */}
+        <VictoryAxis
+          dependentAxis
+          tickValues={[0, 7, 14, 21]}
+          tickFormat={(t: number) => {
+            if (t === 0) return "Normal";
+            if (t === 7) return "Ringan";
+            if (t === 14) return "Sedang";
+            if (t === 21) return "Tinggi";
+            return "";
+          }}
+          style={{
+            axis: { stroke: "#E8E0D0", strokeWidth: 0.5 },
+            tickLabels: { fontSize: 10, fill: colors.ink, fontFamily: "System" },
+            grid: { stroke: "#E8E0D0", strokeWidth: 0.5, strokeDasharray: "4,4" },
+          }}
+        />
+
+        {/* X-Axis */}
+        <VictoryAxis
+          style={{
+            axis: { stroke: "#E8E0D0", strokeWidth: 0.5 },
+            tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: "System" },
+            grid: { stroke: "transparent" },
+          }}
+        />
 
         {/* Bars */}
-        <View style={styles.barsArea}>
-          {/* Gridlines */}
-          {[0, 33, 66, 100].map((pct) => (
-            <View
-              key={pct}
-              style={[
-                styles.gridLine,
-                { bottom: `${pct}%` as any },
-              ]}
-            />
-          ))}
+        <VictoryBar
+          data={SUMMARY_CHART_DATA}
+          cornerRadius={{ top: 6 }}
+          style={{
+            data: {
+              fill: ({ datum }: any) => BAR_COLORS[datum?.x] ?? "#C4B49A",
+              width: 32,
+            },
+          }}
+        />
+      </VictoryChart>
 
-          {DASS_DATA.map((d) => (
-            <View key={d.label} style={styles.barWrapper}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    backgroundColor: d.color,
-                    height: CHART_H * d.heightPct,
-                  },
-                ]}
-              />
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* X-axis labels */}
-      <View style={styles.xAxis}>
-        {DASS_DATA.map((d) => (
-          <Text key={d.label} style={styles.xLabel}>
-            {d.label}
-          </Text>
-        ))}
-      </View>
-
-      <TouchableOpacity 
-        style={styles.seeMoreRow} 
-        activeOpacity={0.7}
-        onPress={() => router.push("/riwayat_dass")}
-      >
-        <Text style={styles.seeMoreText}>Lihat selengkapnya ›</Text>
-      </TouchableOpacity>
+      <Link href="/riwayat_dass" asChild>
+        <TouchableOpacity 
+          style={styles.seeMoreRow} 
+          activeOpacity={0.7}
+        >
+          <Text style={styles.seeMoreText}>Lihat selengkapnya ›</Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
@@ -283,15 +283,50 @@ function DassChart() {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function Index() {
-  const [selectedDay, setSelectedDay] = useState("12");
+  // Menghasilkan kalender mingguan secara real-time
+  const { weekDays, headerDate } = useMemo(() => {
+    const today = new Date();
+    const header = `${DAY_NAMES_LONG[today.getDay()]}, ${today.getDate()} ${MONTH_NAMES[today.getMonth()]}`;
+
+    const days = [];
+    // Warna mock untuk progress chart di kalender
+    const mockColors = [
+      colors.accentYellow,
+      colors.accentBlue,
+      colors.accentRed,
+      colors.accentPurple,
+      colors.accentGreen,
+      colors.accentYellow,
+      colors.surfaceCard,
+    ];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      days.push({
+        day: DAY_NAMES[d.getDay()],
+        date: d.getDate().toString().padStart(2, "0"),
+        color: mockColors[6 - i],
+        hasLog: i !== 0,
+      });
+    }
+    return { weekDays: days, headerDate: header };
+  }, []);
+
+  // Set default state menggunakan tanggal hari ini (data terakhir di array = index 6)
+  const [selectedDay, setSelectedDay] = useState(weekDays[6].date);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+
+  const activeMood = MOODS.find((m) => m.id === selectedMood);
+  const selectedMoodColor = activeMood ? activeMood.color : null;
 
   return (
     
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Minggu, 12 April</Text>
+        <Text style={styles.headerTitle}>{headerDate}</Text>
       </View>
 
       <ScrollView
@@ -299,7 +334,12 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
       >
         {/* Weekly Calendar */}
-        <WeekCalendar selected={selectedDay} onSelect={setSelectedDay} />
+        <WeekCalendar 
+          selected={selectedDay} 
+          onSelect={setSelectedDay}
+          weekDays={weekDays}
+          selectedMoodColor={selectedMoodColor} 
+        />
 
         {/* Mood Selector */}
         <MoodSelector selected={selectedMood} onSelect={setSelectedMood} />

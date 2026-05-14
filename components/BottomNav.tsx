@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
+import { Link } from "expo-router";
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { colors, styles } from "../app/index.styles";
 
@@ -20,30 +20,30 @@ const IconStats = ({ color }: { color: string }) => (
 );
 
 export default function BottomNav({ active }: { active?: "home" | "chart" }) {
-  const router = useRouter();
-
   return (
     <View style={styles.bottomNavWrapper} pointerEvents="box-none">
       <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={[styles.navItem, active === "home" && styles.navItemActive]}
-          onPress={() => router.push("/")}
-          activeOpacity={1}
-          accessibilityLabel="Beranda"
-          accessibilityRole="button"
-        >
-          <IconHome color={active === "home" ? colors.ink : colors.inkSoft} />
-        </TouchableOpacity>
+        <Link href="/" asChild>
+          <TouchableOpacity
+            style={StyleSheet.flatten([styles.navItem, active === "home" && styles.navItemActive])}
+            activeOpacity={1}
+            accessibilityLabel="Beranda"
+            accessibilityRole="button"
+          >
+            <IconHome color={active === "home" ? colors.ink : colors.inkSoft} />
+          </TouchableOpacity>
+        </Link>
 
-        <TouchableOpacity
-          style={[styles.navItem, active === "chart" && styles.navItemActive]}
-          onPress={() => router.push("/riwayat_dass")}
-          activeOpacity={1}
-          accessibilityLabel="Statistik"
-          accessibilityRole="button"
-        >
-          <IconStats color={active === "chart" ? colors.ink : colors.inkSoft} />
-        </TouchableOpacity>
+        <Link href="/riwayat_dass" asChild>
+          <TouchableOpacity
+            style={StyleSheet.flatten([styles.navItem, active === "chart" && styles.navItemActive])}
+            activeOpacity={1}
+            accessibilityLabel="Statistik"
+            accessibilityRole="button"
+          >
+            <IconStats color={active === "chart" ? colors.ink : colors.inkSoft} />
+          </TouchableOpacity>
+        </Link>
       </View>
     </View>
   );
