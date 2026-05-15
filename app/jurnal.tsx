@@ -76,7 +76,7 @@ function MoodHistoryButton({ onPress }: { onPress?: () => void }) {
       activeOpacity={0.85}
     >
       <View style={styles.moodHistoryLeft}>
-        <Text style={styles.moodHistoryIcon}>📅</Text>
+        <Icon name="calendar-today" size={20} color={colors.ink} />
         <Text style={styles.moodHistoryLabel}>Lihat riwayat mood</Text>
       </View>
       <Text style={styles.moodHistoryChevron}>›</Text>
@@ -142,18 +142,28 @@ function JournalInput({
 }
 
 function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
+  const router = useRouter();
+
   return (
     <View style={styles.historySection}>
       <Text style={styles.historySectionTitle}>Riwayat jurnal</Text>
       {entries.map((entry) => (
-        <View key={entry.id} style={styles.entryCard}>
+        <TouchableOpacity 
+          key={entry.id} 
+          style={styles.entryCard}
+          activeOpacity={0.8}
+          onPress={() => router.push({
+            pathname: '/detail_jurnal',
+            params: { id: entry.id, date: entry.date, body: entry.preview }
+          })}
+        >
           <Text style={styles.entryDate}>{entry.date}</Text>
           {entry.preview ? (
             <Text style={styles.entryText} numberOfLines={2}>
               {entry.preview}
             </Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );

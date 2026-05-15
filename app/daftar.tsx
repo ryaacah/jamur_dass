@@ -3,25 +3,25 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ImageBackground,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { styles } from './index.styles';
 
-// ─── Login Screen ─────────────────────────────────────────────────────────────
-export default function LoginScreen() {
+// ─── Register Screen ─────────────────────────────────────────────────────────────
+export default function RegisterScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const handleLogin = () => {
+  const handleRegister = () => {
     router.replace('/');
   };
 
@@ -29,8 +29,8 @@ export default function LoginScreen() {
     router.replace('/');
   };
 
-  const handleRegister = () => {
-    router.replace('/daftar');
+  const handleLoginRedirect = () => {
+    router.replace('/login');
   };
 
   return (
@@ -51,9 +51,9 @@ export default function LoginScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.loginHeader}>
-          <Text style={styles.loginHeaderTitle}>Masuk</Text>
+          <Text style={styles.loginHeaderTitle}>Daftar</Text>
           <Text style={styles.loginHeaderSubtitle}>
-            Selamat datang kembali di ruang amanmu.
+            Buat akun baru untuk memulai perjalananmu.
           </Text>
         </View>
 
@@ -103,11 +103,11 @@ export default function LoginScreen() {
               styles.primaryButton,
               pressed && styles.primaryButtonPressed,
             ]}
-            onPress={handleLogin}
+            onPress={handleRegister}
             accessibilityRole="button"
-            accessibilityLabel="Masuk"
+            accessibilityLabel="Daftar"
           >
-            <Text style={styles.primaryButtonText}>Masuk</Text>
+            <Text style={styles.primaryButtonText}>Daftar</Text>
           </Pressable>
         </View>
 
@@ -139,9 +139,9 @@ export default function LoginScreen() {
         {/* ── Footer ── */}
         <View style={styles.loginFooter}>
           <Text style={styles.footerText}>
-            Belum punya akun?{' '}
-            <TouchableOpacity onPress={handleRegister} activeOpacity={0.7}>
-              <Text style={styles.footerLink}>Buat akun</Text>
+            Sudah punya akun?{' '}
+            <TouchableOpacity onPress={handleLoginRedirect} activeOpacity={0.7}>
+              <Text style={styles.footerLink}>Masuk</Text>
             </TouchableOpacity>
           </Text>
         </View>

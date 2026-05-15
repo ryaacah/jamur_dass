@@ -62,6 +62,7 @@ export const colors = {
   googleYellow: '#FBBC05',
   googleRed: '#EA4335',
   scoreNormal: '#EAE2D2',
+  black: '#000000',
 };
 
 export const spacing = {
@@ -1016,7 +1017,9 @@ export const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
   },
   primaryButtonText: {
-    ...typography.buttonMd,
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Fredoka_400Regular',
     color: colors.ink,
   },
   dividerWrapper: {
@@ -1050,7 +1053,9 @@ export const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
   },
   googleButtonText: {
-    ...typography.buttonMd,
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Fredoka_400Regular',
     color: colors.ink,
   },
   loginFooter: {
@@ -1211,6 +1216,8 @@ export const styles = StyleSheet.create({
   },
   chartCard: {
     gap: 8,
+    width: '100%',
+    overflow: 'hidden',
   },
   chartLegendContainer: {
     flexDirection: 'row',
@@ -1457,6 +1464,116 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontFamily: 'Fredoka_700Bold',
+  },
+
+  // ─── Journal Detail Components (Merged) ──────────────────────────────────
+  headerBackIcon: {
+    fontSize: 24,
+    color: colors.ink,
+  },
+  journalCard: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.xxl,
+    padding: spacing.xl,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    ...cardShadow,
+  },
+  journalBody: {
+    ...typography.bodyMd,
+    color: colors.ink,
+    lineHeight: 22,
+    marginTop: spacing.md,
+  },
+  editRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: spacing.md,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfaceCard,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    ...smShadow,
+  },
+  editBtnText: {
+    ...typography.buttonMd,
+    color: colors.ink,
+  },
+  moodCard: {
+    backgroundColor: colors.surfaceCard,
+    borderRadius: radius.xl,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    padding: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.xxl + 16,
+    ...cardShadow,
+  },
+  moodTextGroup: {
+    gap: spacing.xxs,
+  },
+  moodTitle: {
+    ...typography.headingLg,
+    color: colors.ink,
+  },
+  moodValue: {
+    ...typography.headingLg,
+    color: colors.ink,
+  },
+  moodBadge: {
+    borderWidth: 2,
+    borderColor: colors.ink,
+    borderRadius: radius.full,
+    width: 88,
+    height: 88,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accentYellow,
+    gap: 4,
+    ...smShadow,
+  },
+  moodEmoji: {
+    width: 48,
+    height: 48,
+  },
+  moodEmojiPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.accentYellow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moodEmojiText: {
+    fontSize: 28,
+  },
+  navBtn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.xl,
+  },
+  navBtnActive: {
+    backgroundColor: colors.primaryContainer,
+  },
+  navIcon: {
+    fontSize: 24,
+    color: colors.onSurfaceVariant,
+  },
+  navIconActive: {
+    fontSize: 24,
+    color: colors.onPrimaryContainer,
   },
 });
 

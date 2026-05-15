@@ -1,13 +1,15 @@
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
@@ -217,15 +219,20 @@ const SUMMARY_CHART_DATA = [
 ];
 
 function DassChart() {
+  // Menghitung lebar layar dikurangi padding container (kiri-kanan)
+  const { width } = Dimensions.get("window");
+  const chartWidth = width - 64;
+
   return (
     <View style={StyleSheet.flatten([styles.mutableCard, styles.chartCard])}>
       <Text style={styles.cardTitle}>Riwayat Skor DASS-21</Text>
 
       {/* Chart area */}
       <VictoryChart
+        width={chartWidth}
         height={220}
         domainPadding={{ x: 40 }}
-        padding={{ top: 20, bottom: 40, left: 56, right: 20 }}
+        padding={{ top: 20, bottom: 40, left: 56, right: 40 }}
         domain={{ y: [0, 21] }}
       >
         {/* Y-Axis */}
@@ -327,6 +334,11 @@ export default function Index() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{headerDate}</Text>
+        <Link href="/pengaturan" asChild>
+          <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
+            <Icon name="settings" size={26} color={colors.ink} />
+          </TouchableOpacity>
+        </Link>
       </View>
 
       <ScrollView

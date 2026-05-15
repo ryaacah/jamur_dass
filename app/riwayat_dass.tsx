@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
+  Dimensions,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -88,6 +89,9 @@ export default function DassHistoryScreen() {
     y: item.value,
   }));
 
+  const { width } = Dimensions.get('window');
+  const chartWidth = width - 64;
+
   return (
     <SafeAreaView style={styles.wrapper}>
       <StatusBar style="dark" backgroundColor={colors.canvas} />
@@ -133,9 +137,10 @@ export default function DassHistoryScreen() {
         {/* ── Bar Chart Card ── */}
         <View style={StyleSheet.flatten([styles.card, styles.chartCard])}>
           <VictoryChart
+            width={chartWidth}
             height={220}
             domainPadding={{ x: 40 }}
-            padding={{ top: 20, bottom: 40, left: 56, right: 20 }}
+            padding={{ top: 20, bottom: 40, left: 56, right: 40 }}
             domain={{ y: [0, 21] }}
           >
             {/* Y-Axis */}
