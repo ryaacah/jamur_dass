@@ -4,12 +4,12 @@ import { Link } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
@@ -154,7 +154,7 @@ function QuickActions() {
   return (
     <View style={styles.bentoGrid}>
       {/* Jurnal */}
-      <Link href="/jurnal" asChild>
+      <Link href="./journal" asChild>
         <TouchableOpacity 
           activeOpacity={0.8} 
           style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
@@ -172,7 +172,7 @@ function QuickActions() {
       </Link>
 
       {/* Pernafasan */}
-      <Link href="/pernafasan" asChild>
+      <Link href="./breathing" asChild>
         <TouchableOpacity 
           activeOpacity={0.8} 
           style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
@@ -194,7 +194,7 @@ function QuickActions() {
 
 function DassBanner() {
   return (
-    <Link href="/assesmen" asChild>
+    <Link href="./assessment" asChild>
       <TouchableOpacity 
         activeOpacity={0.8} 
         style={StyleSheet.flatten([styles.card, styles.bannerRow])}
@@ -275,7 +275,7 @@ function DassChart() {
         />
       </VictoryChart>
 
-      <Link href="/riwayat_dass" asChild>
+      <Link href="./dass-history" asChild>
         <TouchableOpacity 
           style={styles.seeMoreRow} 
           activeOpacity={0.7}
@@ -334,7 +334,7 @@ export default function Index() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{headerDate}</Text>
-        <Link href="/pengaturan" asChild>
+        <Link href="./settings-notification" asChild>
           <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
             <Icon name="settings" size={26} color={colors.ink} />
           </TouchableOpacity>

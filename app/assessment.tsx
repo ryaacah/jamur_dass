@@ -127,7 +127,7 @@ function Tagline() {
 function Footer() {
   return (
     <View style={styles.assesmenFooter}>
-      <Link href="/pertanyaan" asChild>
+      <Link href="./questions-dass-21" asChild>
         <TouchableOpacity
           style={styles.startBtn}
           activeOpacity={0.85}

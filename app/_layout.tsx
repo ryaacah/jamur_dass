@@ -1,11 +1,11 @@
-import { Stack } from "expo-router";
-import { useFonts } from 'expo-font';
-import { 
-  Fredoka_400Regular, 
-  Fredoka_500Medium, 
-  Fredoka_600SemiBold, 
-  Fredoka_700Bold 
+import {
+  Fredoka_400Regular,
+  Fredoka_500Medium,
+  Fredoka_600SemiBold,
+  Fredoka_700Bold
 } from '@expo-google-fonts/fredoka';
+import { useFonts } from 'expo-font';
+import { Stack } from "expo-router";
 import * as ExpoSplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import SplashScreen from "./splash-screen";
@@ -14,7 +14,7 @@ ExpoSplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Fredoka_400Regular,
     Fredoka_500Medium,
     Fredoka_600SemiBold,
@@ -22,6 +22,8 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    if (fontError) throw fontError;
+
     // Tunggu sampai font selesai dimuat sebelum menjalankan timer splash screen
     if (fontsLoaded) {
       const timer = setTimeout(() => {
@@ -31,7 +33,7 @@ export default function RootLayout() {
 
       return () => clearTimeout(timer);
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
   // Tampilkan splash screen selama showSplash bernilai true atau font belum dimuat
   if (showSplash || !fontsLoaded) {
@@ -41,16 +43,16 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="jurnal" />
-      <Stack.Screen name="assesmen" />
-      <Stack.Screen name="pertanyaan" />
-      <Stack.Screen name="riwayat_dass" />
+      <Stack.Screen name="journal" />
+      <Stack.Screen name="assessment" />
+      <Stack.Screen name="questions-dass-21" />
+      <Stack.Screen name="dass-history" />
       <Stack.Screen
-        name="tanggal_mood"
+        name="mood-date"
         options={{ presentation: "transparentModal", animation: "fade" }}
       />
       <Stack.Screen
-        name="tanggal_hasil"
+        name="result-date"
         options={{ presentation: "transparentModal", animation: "fade" }}
       />
     </Stack>

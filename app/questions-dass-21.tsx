@@ -2,12 +2,12 @@ import { Image, ImageSource } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    BackHandler,
-    Modal,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  BackHandler,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -100,7 +100,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   return (
     <View style={styles.progressSection}>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${pct}%` as `${number}%` }]} />
+        <View style={[styles.progressFill, { width: `${pct}%` as any }]} />
       </View>
       <Text style={styles.progressLabel}>
         {current} dari {total}
@@ -134,7 +134,7 @@ function OptionButton({
       onPress={onPress}
       style={[
         styles.optionButton,
-        styles[option.colorStyle],
+        (styles as any)[option.colorStyle],
         isSelected && styles.optionSelected,
       ]}
       accessibilityRole="radio"
@@ -183,6 +183,8 @@ export default function DASSFormScreen() {
   const questionText = DASS_QUESTIONS[currentIndex];
 
   const handleAnswer = (value: AnswerValue) => {
+    if (selected !== null) return; // Mencegah double tap (klik berkali-kali)
+
     setSelected(value);
     
     // Beri sedikit delay (400ms) agar user melihat pilihannya terlebih dahulu
@@ -194,7 +196,7 @@ export default function DASSFormScreen() {
         setSelected(null); // Reset pilihan untuk soal berikutnya
       } else {
         // Selesai semua pertanyaan
-        router.replace("/riwayat_dass"); // Bawa user langsung ke halaman skor
+        router.replace("./dass-history"); // Bawa user langsung ke halaman skor
       }
     }, 400);
   };
@@ -279,7 +281,7 @@ export default function DASSFormScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalBtnExit}
-                onPress={() => router.replace('/assesmen')}
+                onPress={() => router.replace('./assessment')}
                 activeOpacity={0.8}
               >
                 <Text style={styles.modalBtnText}>Keluar</Text>

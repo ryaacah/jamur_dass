@@ -153,7 +153,7 @@ function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
           style={styles.entryCard}
           activeOpacity={0.8}
           onPress={() => router.push({
-            pathname: '/detail_jurnal',
+            pathname: './journal-detail',
             params: { id: entry.id, date: entry.date, body: entry.preview }
           })}
         >
@@ -207,10 +207,10 @@ export default function JournalScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Lihat riwayat mood */}
-          <MoodHistoryButton onPress={() => router.push("/tanggal_mood")} />
+          <MoodHistoryButton onPress={() => router.push("./mood-date")} />
 
           {/* Reset pikiran card */}
-          <ResetCard onPress={() => router.push("/pernafasan")} />
+          <ResetCard onPress={() => router.push("./breathing")} />
 
           {/* Journal input */}
           <JournalInput

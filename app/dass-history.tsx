@@ -123,7 +123,7 @@ export default function DassHistoryScreen() {
         {/* ── Date Selector ── */}
         <TouchableOpacity
           style={[styles.card, styles.dateSelectorCard]}
-          onPress={() => router.push('/tanggal_hasil')}
+          onPress={() => router.push('./result-date')}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={`Pilih tanggal, saat ini ${data.date}`}

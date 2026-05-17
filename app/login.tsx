@@ -3,13 +3,13 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ImageBackground,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { styles } from './styles';
 
@@ -30,7 +30,7 @@ export default function LoginScreen() {
   };
 
   const handleRegister = () => {
-    router.replace('/daftar');
+    router.replace('./register');
   };
 
   return (
