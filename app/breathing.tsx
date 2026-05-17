@@ -3,17 +3,17 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Easing,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BottomNav from '../components/BottomNav';
-import { colors, styles } from './index.styles';
+import { colors, styles } from './styles';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AturPernapasan() {

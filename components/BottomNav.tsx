@@ -2,7 +2,7 @@ import { Link } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
-import { colors, styles } from "../app/index.styles";
+import { colors, styles } from "../app/styles";
 
 const IconHome = ({ color }: { color: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

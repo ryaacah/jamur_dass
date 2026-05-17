@@ -8,7 +8,7 @@ import {
 } from '@expo-google-fonts/fredoka';
 import * as ExpoSplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
-import SplashScreen from "./splash";
+import SplashScreen from "./splash-screen";
 
 ExpoSplashScreen.preventAutoHideAsync();
 

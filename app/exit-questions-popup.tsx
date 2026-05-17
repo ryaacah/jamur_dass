@@ -9,7 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { colors, styles } from './index.styles';
+import { colors, styles } from './styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AnswerOption {

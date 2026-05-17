@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, styles } from "./index.styles";
+import { colors, styles } from "./styles";
 
 // ─── Local Assets ─────────────────────────────────────────────────────────────
 const MASCOT_IMAGE = require("../assets/images/splash_icon.png");

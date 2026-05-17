@@ -1,6 +1,6 @@
 import React from "react";
 import { Image, SafeAreaView, Text, View } from "react-native";
-import { styles } from "./index.styles";
+import { styles } from "./styles";
 
 // ─── Local Assets ─────────────────────────────────────────────────────────────
 const BG_IMAGE = require("../assets/images/bg_splash.png");

@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
 import BottomNav from "../components/BottomNav";
-import { BAR_COLORS, colors, styles } from "./index.styles";
+import { BAR_COLORS, colors, styles } from "./styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const DAY_NAMES = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];

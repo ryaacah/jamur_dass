@@ -2,15 +2,15 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/BottomNav";
-import { colors, styles } from "./index.styles";
+import { colors, styles } from "./styles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JournalEntry {

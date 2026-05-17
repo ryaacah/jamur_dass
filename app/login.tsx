@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { styles } from './index.styles';
+import { styles } from './styles';
 
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 export default function LoginScreen() {

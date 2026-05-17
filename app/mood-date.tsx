@@ -2,7 +2,7 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';
-import { colors, styles } from './index.styles';
+import { colors, styles } from './styles';
 
 // ── Types & Data ─────────────────────────────────────────────
 interface CalendarDay {

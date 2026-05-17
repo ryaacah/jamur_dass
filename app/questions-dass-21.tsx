@@ -2,19 +2,19 @@ import { Image, ImageSource } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-  BackHandler,
-  Modal,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    BackHandler,
+    Modal,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { colors, styles } from './index.styles'; // Pastikan styles sudah dibuat di index.styles.ts
+import { colors, styles } from './styles'; // Pastikan styles sudah dibuat di index.styles.ts
 
 // ─── Aset gambar ──────────────────────────────────────────────────────────────
 const ETIKET_0 = require("../assets/images/etiket0.png");

@@ -3,16 +3,16 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
-import { colors, styles } from './index.styles';
+import { colors, styles } from './styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MoodData {

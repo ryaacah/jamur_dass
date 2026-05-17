@@ -3,17 +3,17 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { VictoryAxis, VictoryBar, VictoryChart } from 'victory-native';
 import BottomNav from '../components/BottomNav';
-import { BAR_COLORS, colors, styles } from './index.styles';
+import { BAR_COLORS, colors, styles } from './styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ScoreCategory = 'Normal' | 'Ringan' | 'Sedang' | 'Tinggi' | 'Sangat Tinggi';
