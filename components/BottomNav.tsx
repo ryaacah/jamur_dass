@@ -34,7 +34,7 @@ export default function BottomNav({ active }: { active?: "home" | "chart" }) {
           </TouchableOpacity>
         </Link>
 
-        <Link href="/riwayat_dass" asChild>
+        <Link href="/dass-history" asChild>
           <TouchableOpacity
             style={StyleSheet.flatten([styles.navItem, active === "chart" && styles.navItemActive])}
             activeOpacity={1}

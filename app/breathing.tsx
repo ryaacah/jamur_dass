@@ -1,19 +1,26 @@
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Easing,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BottomNav from '../components/BottomNav';
 import { colors, styles } from './styles';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const PHASES = [
+  { label: 'Tarik napas...', time: 4, color: colors.accentGreen },
+  { label: 'Tahan...', time: 7, color: colors.accentYellow },
+  { label: 'Hembuskan...', time: 8, color: colors.accentBlue },
+];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AturPernapasan() {
@@ -26,46 +33,7 @@ export default function AturPernapasan() {
   // Animated scale for the breathing button press feedback
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const phases = [
-    { label: 'Tarik napas...', time: 4, color: colors.accentGreen },
-    { label: 'Tahan...', time: 7, color: colors.accentYellow },
-    { label: 'Hembuskan...', time: 8, color: colors.accentBlue },
-  ];
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    if (isActive) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev > 1) return prev - 1;
-          
-          // Pindah ke fase pernapasan berikutnya atau berhenti
-          if (phaseIndex < 2) {
-            const nextPhase = phaseIndex + 1;
-            setPhaseIndex(nextPhase);
-            triggerAnimation(nextPhase);
-            return phases[nextPhase].time;
-          } else {
-            // Selesai 1 siklus 4-7-8
-            setIsActive(false);
-            setPhaseIndex(0);
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              useNativeDriver: true,
-            }).start();
-            return 0;
-          }
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, phaseIndex]);
-
-  const triggerAnimation = (phase: number) => {
+  const triggerAnimation = useCallback((phase: number) => {
     scaleAnim.stopAnimation();
     if (phase === 0) {
       // Inhale (Membesar)
@@ -86,7 +54,40 @@ export default function AturPernapasan() {
         useNativeDriver: true,
       }).start();
     }
-  };
+  }, [scaleAnim]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+
+    if (isActive) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev > 1) return prev - 1;
+          
+          // Pindah ke fase pernapasan berikutnya atau berhenti
+          if (phaseIndex < 2) {
+            const nextPhase = phaseIndex + 1;
+            setPhaseIndex(nextPhase);
+            triggerAnimation(nextPhase);
+            return PHASES[nextPhase].time;
+          } else {
+            // Selesai 1 siklus 4-7-8
+            setIsActive(false);
+            setPhaseIndex(0);
+            Animated.spring(scaleAnim, {
+              toValue: 1,
+              useNativeDriver: true,
+            }).start();
+            return 0;
+          }
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive, phaseIndex, scaleAnim, triggerAnimation]);
 
   const handleStart = () => {
     if (isActive) return; // Abaikan klik jika animasi sedang berjalan
@@ -94,7 +95,7 @@ export default function AturPernapasan() {
     // Memulai pernapasan
     setIsActive(true);
     setPhaseIndex(0);
-    setTimeLeft(phases[0].time);
+    setTimeLeft(PHASES[0].time);
     triggerAnimation(0);
   };
 
@@ -153,13 +154,13 @@ export default function AturPernapasan() {
                 styles.breathingButton,
                 { 
                   transform: [{ scale: scaleAnim }],
-                  backgroundColor: isActive ? phases[phaseIndex].color : colors.accentCream
+                  backgroundColor: isActive ? PHASES[phaseIndex].color : colors.accentCream
                 },
               ]}
             >
               {isActive ? (
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={styles.breathingPhaseLabelInside}>{phases[phaseIndex].label}</Text>
+                  <Text style={styles.breathingPhaseLabelInside}>{PHASES[phaseIndex].label}</Text>
                   <Text style={styles.breathingTimerInside}>{timeLeft}</Text>
                 </View>
               ) : (
