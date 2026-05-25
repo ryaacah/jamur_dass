@@ -3,14 +3,16 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { VictoryAxis, VictoryBar, VictoryChart } from 'victory-native';
 import BottomNav from '../components/BottomNav';
 import { BAR_COLORS, colors, styles } from './styles';
@@ -42,6 +44,15 @@ const MOCK_DATA: DassData = {
   total: 42,
   totalCategory: 'Sedang',
 };
+
+const HISTORY_LIST = [
+  { id: '1', date: '20 Feb 2026', total: 42, category: 'Sedang' },
+  { id: '2', date: '15 Jan 2026', total: 20, category: 'Normal' },
+  { id: '3', date: '10 Dec 2025', total: 54, category: 'Tinggi' },
+  { id: '4', date: '05 Nov 2025', total: 60, category: 'Sangat Tinggi' },
+  { id: '5', date: '01 Oct 2025', total: 30, category: 'Ringan' },
+  { id: '6', date: '12 Sep 2025', total: 42, category: 'Sedang' },
+];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function ScoreRow({
@@ -81,7 +92,8 @@ function ChartLegend() {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function DassHistoryScreen() {
-  const [data] = useState<DassData>(MOCK_DATA);
+  const [data, setData] = useState<DassData>(MOCK_DATA);
+  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const router = useRouter();
 
   const chartData = data.scores.map((item) => ({
@@ -93,7 +105,7 @@ export default function DassHistoryScreen() {
   const chartWidth = width - 64;
 
   return (
-    <SafeAreaView style={styles.wrapper}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       {/* ── Header ── */}
@@ -123,7 +135,7 @@ export default function DassHistoryScreen() {
         {/* ── Date Selector ── */}
         <TouchableOpacity
           style={[styles.card, styles.dateSelectorCard]}
-          onPress={() => router.push('./result-date')}
+          onPress={() => setHistoryModalVisible(true)}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={`Pilih tanggal, saat ini ${data.date}`}
@@ -156,7 +168,7 @@ export default function DassHistoryScreen() {
               }}
               style={{
                 axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
-                tickLabels: { fontSize: 10, fill: colors.ink, fontFamily: 'System' },
+                tickLabels: { fontSize: 12, fill: colors.ink, fontFamily: 'System' },
                 grid: { stroke: '#E8E0D0', strokeWidth: 0.5, strokeDasharray: '4,4' },
               }}
             />
@@ -165,7 +177,7 @@ export default function DassHistoryScreen() {
             <VictoryAxis
               style={{
                 axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
-                tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: 'System' },
+                tickLabels: { fontSize: 13, fill: colors.ink, fontFamily: 'System' },
                 grid: { stroke: 'transparent' },
               }}
             />
@@ -222,6 +234,48 @@ export default function DassHistoryScreen() {
 
       {/* ── Bottom Nav Bar ── */}
       <BottomNav active="chart" />
+
+      {/* ── Modal Riwayat Tes (Ala Mutasi Bank) ── */}
+      <Modal visible={isHistoryModalVisible} transparent animationType="fade" onRequestClose={() => setHistoryModalVisible(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setHistoryModalVisible(false)}>
+          <View style={[styles.modalCard, { maxHeight: '70%', padding: 20 }]} onStartShouldSetResponder={() => true}>
+            
+            {/* Modal Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={styles.modalTitle}>Riwayat Tes</Text>
+              <TouchableOpacity onPress={() => setHistoryModalVisible(false)} activeOpacity={0.7} style={{ padding: 4 }}>
+                <Icon name="close" size={24} color={colors.ink} />
+              </TouchableOpacity>
+            </View>
+
+            {/* List Riwayat */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {HISTORY_LIST.map((hist) => (
+                <TouchableOpacity
+                  key={hist.id}
+                  activeOpacity={0.7}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingVertical: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.borderDefault,
+                  }}
+                  onPress={() => {
+                    // Mengubah data yang ditampilkan
+                    setData({ ...data, date: hist.date, total: hist.total, totalCategory: hist.category as ScoreCategory });
+                    setHistoryModalVisible(false);
+                  }}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: colors.ink }}>{hist.date}</Text>
+                  <Text style={{ fontSize: 16, color: colors.inkSoft }}>Skor: {hist.total} ({hist.category})</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

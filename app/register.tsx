@@ -1,31 +1,29 @@
-import { Image } from 'expo-image';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    ImageBackground,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { styles } from './styles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, styles } from './styles';
 
 // ─── Register Screen ─────────────────────────────────────────────────────────────
 export default function RegisterScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleRegister = () => {
-    router.replace('/');
-  };
-
-  const handleGoogleLogin = () => {
     router.replace('/');
   };
 
@@ -43,6 +41,19 @@ export default function RegisterScreen() {
         style={styles.backgroundImage}
         resizeMode="cover"
       />
+
+      {/* ── Tombol Back ── */}
+      <TouchableOpacity
+        style={[
+          styles.headerBackBtn,
+          { position: 'absolute', top: Math.max(insets.top + 16, 24), left: 16, zIndex: 10 },
+        ]}
+        onPress={() => router.replace('/login')}
+        accessibilityRole="button"
+        accessibilityLabel="Kembali"
+      >
+        <Icon name="arrow-back" size={24} color={colors.ink} />
+      </TouchableOpacity>
 
       <ScrollView
         contentContainerStyle={styles.loginScrollContent}
@@ -110,31 +121,6 @@ export default function RegisterScreen() {
             <Text style={styles.primaryButtonText}>Daftar</Text>
           </Pressable>
         </View>
-
-        {/* ── Divider ── */}
-        <View style={styles.dividerWrapper}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Atau</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* ── Google Button ── */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.googleButton,
-            pressed && styles.googleButtonPressed,
-          ]}
-          onPress={handleGoogleLogin}
-          accessibilityRole="button"
-          accessibilityLabel="Masuk lewat Google"
-        >
-          <Image 
-            source={{ uri: 'https://img.icons8.com/color/48/google-logo.png' }} 
-            style={{ width: 20, height: 20 }} 
-            contentFit="contain" 
-          />
-          <Text style={styles.googleButtonText}>Masuk lewat Google</Text>
-        </Pressable>
 
         {/* ── Footer ── */}
         <View style={styles.loginFooter}>

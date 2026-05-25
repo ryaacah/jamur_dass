@@ -3,13 +3,13 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
 import { colors, styles } from './styles';
@@ -98,7 +98,7 @@ export default function JournalDetailScreen() {
       >
         {/* Journal Entry Card */}
         <View style={styles.journalCard}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.ink }}>{date}</Text>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.ink }}>{date}</Text>
           <Text style={styles.journalBody}>{body}</Text>
         </View>
 
@@ -114,7 +114,7 @@ export default function JournalDetailScreen() {
             accessibilityLabel="Edit jurnal"
           >
             <Icon name="edit" size={20} color={colors.ink} />
-            <Text style={[styles.editBtnText, { fontSize: 16 }]}>Edit</Text>
+            <Text style={[styles.editBtnText, { fontSize: 18 }]}>Edit</Text>
           </Pressable>
         </View>
 
@@ -129,7 +129,7 @@ export default function JournalDetailScreen() {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <BottomNav />
+      <BottomNav active="journal" />
     </SafeAreaView>
   );
 }

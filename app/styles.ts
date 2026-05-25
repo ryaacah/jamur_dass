@@ -97,16 +97,16 @@ export const radius = {
 export const radii = radius;
 
 export const typography = {
-  display: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
-  headingLg: { fontSize: 20, lineHeight: 25, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
-  headingMd: { fontSize: 16, lineHeight: 21, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
-  bodyMd: { fontSize: 14, lineHeight: 21, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
-  bodyStrong: { fontSize: 14, lineHeight: 21, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
-  bodySm: { fontSize: 12, lineHeight: 17, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
-  bodySmStrong: { fontSize: 12, lineHeight: 17, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
-  labelMood: { fontSize: 10, lineHeight: 10, fontWeight: '500' as const, fontFamily: 'Fredoka_500Medium' },
-  buttonMd: { fontSize: 14, lineHeight: 14, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
-  buttonSm: { fontSize: 12, lineHeight: 12, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
+  display: { fontSize: 32, lineHeight: 40, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  headingLg: { fontSize: 24, lineHeight: 30, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  headingMd: { fontSize: 18, lineHeight: 24, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  bodyMd: { fontSize: 16, lineHeight: 24, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
+  bodyStrong: { fontSize: 16, lineHeight: 24, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
+  bodySm: { fontSize: 14, lineHeight: 20, fontWeight: '400' as const, fontFamily: 'Fredoka_400Regular' },
+  bodySmStrong: { fontSize: 14, lineHeight: 20, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
+  labelMood: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const, fontFamily: 'Fredoka_500Medium' },
+  buttonMd: { fontSize: 16, lineHeight: 20, fontWeight: '700' as const, fontFamily: 'Fredoka_700Bold' },
+  buttonSm: { fontSize: 14, lineHeight: 18, fontWeight: '600' as const, fontFamily: 'Fredoka_600SemiBold' },
 };
 
 const cardShadow = {
@@ -152,15 +152,15 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerBackText: {
-    fontSize: 24,
+    fontSize: 28,
     color: colors.ink,
     lineHeight: 28,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
     color: colors.ink,
-    lineHeight: 25,
+    lineHeight: 30,
   },
   headerTitleWrapper: {
     flex: 1,
@@ -190,19 +190,16 @@ export const styles = StyleSheet.create({
   calendarRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 4,
     paddingVertical: 8,
   },
   dayCell: {
-    flex: 1,
-    maxWidth: 48,
-    height: 60,
+    width: "13%",
+    height: 64,
     borderRadius: 8,
     borderWidth: 2,
     borderColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
     ...smShadow,
   },
   dayCellSelected: {
@@ -210,7 +207,7 @@ export const styles = StyleSheet.create({
     borderColor: colors.ink,
   },
   dayLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 14,
@@ -232,13 +229,13 @@ export const styles = StyleSheet.create({
     ...cardShadow,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: colors.ink,
     lineHeight: 21,
   },
   cardBody: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 17,
@@ -273,7 +270,7 @@ export const styles = StyleSheet.create({
     height: 40,
   },
   moodLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "500",
     lineHeight: 10,
   },
@@ -293,7 +290,7 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   chevron: {
-    fontSize: 20,
+    fontSize: 24,
     color: colors.inkSoft,
     lineHeight: 22,
   },
@@ -318,7 +315,7 @@ export const styles = StyleSheet.create({
     marginTop: 12,
   },
   seeMoreText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
   },
@@ -449,16 +446,16 @@ export const styles = StyleSheet.create({
   },
 
   appName: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "700",
     color: colors.brandDark,
     letterSpacing: -0.5,
-    lineHeight: 34,
+    lineHeight: 40,
     textAlign: "center",
   },
 
   tagline: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 21,
@@ -485,17 +482,17 @@ export const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   moodHistoryIcon: {
-    fontSize: 20,
+    fontSize: 22,
     color: colors.ink,
   },
   moodHistoryLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: colors.ink,
     lineHeight: 21,
   },
   moodHistoryChevron: {
-    fontSize: 20,
+    fontSize: 24,
     color: colors.ink,
   },
 
@@ -514,14 +511,14 @@ export const styles = StyleSheet.create({
     zIndex: 2,
   },
   resetTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.ink,
     lineHeight: 21,
     marginBottom: spacing.xxs,
   },
   resetBody: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 17,
@@ -538,7 +535,7 @@ export const styles = StyleSheet.create({
     ...smShadow,
   },
   resetBtnText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
   },
@@ -564,7 +561,7 @@ export const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   journalTextInput: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "400",
     color: colors.ink,
     lineHeight: 21,
@@ -585,7 +582,7 @@ export const styles = StyleSheet.create({
     ...smShadow,
   },
   saveBtnText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
   },
@@ -596,7 +593,7 @@ export const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   historySectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.ink,
     lineHeight: 21,
@@ -611,14 +608,14 @@ export const styles = StyleSheet.create({
     ...cardShadow,
   },
   entryDate: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
     lineHeight: 17,
     marginBottom: 4,
   },
   entryText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 17,
@@ -652,7 +649,7 @@ export const styles = StyleSheet.create({
     ...smShadow,
   },
   speechBubbleText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
     lineHeight: 17,
@@ -672,7 +669,7 @@ export const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   displayTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "700",
     color: colors.ink,
     lineHeight: 34,
@@ -689,7 +686,7 @@ export const styles = StyleSheet.create({
     color: colors.inkSoft,
   },
   timeText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "400",
     color: colors.inkSoft,
     lineHeight: 21,
@@ -703,7 +700,7 @@ export const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   descText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "400",
     color: colors.onSurfaceVariant,
     lineHeight: 22,
@@ -720,14 +717,14 @@ export const styles = StyleSheet.create({
     borderColor: colors.ink,
   },
   instructionBoxTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: colors.ink,
     lineHeight: 21,
     marginBottom: spacing.xxs,
   },
   instructionBoxText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     color: colors.onSurfaceVariant,
     lineHeight: 17,
@@ -754,28 +751,28 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.xxs,
   },
   bentoValueTertiary: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.tertiary,
     lineHeight: 21,
     textAlign: "center",
   },
   bentoValueSecondary: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.secondary,
     lineHeight: 21,
     textAlign: "center",
   },
   bentoLabelTertiary: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "500",
     color: colors.onTertiaryContainer,
     lineHeight: 12,
     textAlign: "center",
   },
   bentoLabelSecondary: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "500",
     color: colors.onSecondaryContainer,
     lineHeight: 12,
@@ -783,7 +780,7 @@ export const styles = StyleSheet.create({
   },
   taglineAssesmen: {
     marginTop: spacing.lg,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     color: colors.inkSoft,
     textAlign: "center",
@@ -810,13 +807,13 @@ export const styles = StyleSheet.create({
     ...cardShadow,
   },
   startBtnText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.onPrimaryContainer,
     lineHeight: 14,
   },
   startBtnIcon: {
-    fontSize: 18,
+    fontSize: 20,
     color: colors.onPrimaryContainer,
   },
 
@@ -854,7 +851,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.secondaryFixed,
   },
   progressLabel: {
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 16.8,
     fontWeight: '600',
     color: colors.inkSoft,
@@ -872,7 +869,7 @@ export const styles = StyleSheet.create({
     ...cardShadow,
   },
   questionText: {
-    fontSize: 20,
+    fontSize: 24,
     lineHeight: 25,
     fontWeight: '700',
     color: colors.ink,
@@ -914,7 +911,7 @@ export const styles = StyleSheet.create({
     height: '100%',
   },
   etiketText: {
-    fontSize: 20,
+    fontSize: 24,
     lineHeight: 25,
     fontWeight: '700',
     color: colors.ink,
@@ -927,13 +924,13 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   optionLabel: {
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 21,
     fontWeight: '600',
     color: colors.ink,
   },
   optionDescription: {
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 16.8,
     fontWeight: '400',
     color: colors.inkSoft,
@@ -1017,7 +1014,7 @@ export const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
   },
   primaryButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Fredoka_400Regular',
     color: colors.ink,
@@ -1053,7 +1050,7 @@ export const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
   },
   googleButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Fredoka_400Regular',
     color: colors.ink,
@@ -1140,7 +1137,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.scoreMedium,
   },
   barLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.ink,
     position: 'absolute',
@@ -1236,7 +1233,7 @@ export const styles = StyleSheet.create({
     borderRadius: 3,
   },
   chartLegendLabel: {
-    fontSize: 11,
+    fontSize: 13,
     color: colors.ink,
   },
 
@@ -1451,14 +1448,14 @@ export const styles = StyleSheet.create({
     color: colors.ink,
   },
   breathingPhaseLabelInside: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.ink,
     textAlign: 'center',
     fontFamily: 'Fredoka_700Bold',
   },
   breathingTimerInside: {
-    fontSize: 64,
+    fontSize: 72,
     fontWeight: '700',
     color: colors.ink,
     textAlign: 'center',

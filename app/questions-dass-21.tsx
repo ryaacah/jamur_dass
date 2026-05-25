@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {
   BackHandler,
   Modal,
+  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -164,8 +165,7 @@ function OptionButton({
 export default function DASSFormScreen() {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selected, setSelected] = useState<AnswerValue | null>(null);
-  const [answers, setAnswers] = useState<AnswerValue[]>([]);
+  const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
   const [exitModalVisible, setExitModalVisible] = useState(false);
 
   // Mencegat tombol fisik "back" di perangkat (khususnya Android)
@@ -183,23 +183,25 @@ export default function DASSFormScreen() {
   const questionText = DASS_QUESTIONS[currentIndex];
 
   const handleAnswer = (value: AnswerValue) => {
-    if (selected !== null) return; // Mencegah double tap (klik berkali-kali)
-
-    setSelected(value);
-    
-    // Beri sedikit delay (400ms) agar user melihat pilihannya terlebih dahulu
-    setTimeout(() => {
-      const newAnswers = [...answers, value];
-      if (currentIndex < totalQuestions - 1) {
-        setAnswers(newAnswers);
-        setCurrentIndex(currentIndex + 1);
-        setSelected(null); // Reset pilihan untuk soal berikutnya
-      } else {
-        // Selesai semua pertanyaan
-        router.replace("./dass-history"); // Bawa user langsung ke halaman skor
-      }
-    }, 400);
+    setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
   };
+
+  const handleNext = () => {
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    } else {
+      // Selesai semua pertanyaan
+      router.replace("./dass-history");
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  const isNextDisabled = answers[currentIndex] === undefined;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -246,10 +248,41 @@ export default function DASSFormScreen() {
             <OptionButton
               key={option.value}
               option={option}
-              isSelected={selected === option.value}
+              isSelected={answers[currentIndex] === option.value}
               onPress={() => handleAnswer(option.value)}
             />
           ))}
+        </View>
+
+        {/* ── Navigasi Antar Pertanyaan ── */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 32, marginBottom: 24, gap: 16 }}>
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              { flex: 1, backgroundColor: colors.surfaceVariant },
+              currentIndex === 0 && { opacity: 0 }
+            ]}
+            onPress={handlePrev}
+            disabled={currentIndex === 0}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.primaryButtonText, { color: colors.ink, fontWeight: '700' }]}>Sebelumnya</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              { flex: 1, backgroundColor: isNextDisabled ? colors.surfaceVariant : colors.accentGreen },
+              isNextDisabled && { opacity: 0 }
+            ]}
+            onPress={handleNext}
+            disabled={isNextDisabled}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.primaryButtonText, { color: isNextDisabled ? colors.inkSoft : colors.ink, fontWeight: '700' }]}>
+              {currentIndex === totalQuestions - 1 ? 'Selesai' : 'Selanjutnya'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -260,8 +293,8 @@ export default function DASSFormScreen() {
         animationType="fade"
         onRequestClose={() => setExitModalVisible(false)} // Menutup pop-up saat tombol back fisik ditekan lagi
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setExitModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
             <View style={styles.modalTextGroup}>
               <Text style={styles.modalTitle}>Ingin berhenti sejenak?</Text>
               <Text style={styles.modalBody}>
@@ -288,7 +321,7 @@ export default function DASSFormScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

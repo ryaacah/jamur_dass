@@ -1,12 +1,14 @@
 import { MaterialIcons as Icon } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/BottomNav";
@@ -48,6 +50,41 @@ const JOURNAL_HISTORY: JournalEntry[] = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function WeekCalendar({
+  selected,
+  onSelect,
+  weekDays,
+}: {
+  selected: string;
+  onSelect: (date: string) => void;
+  weekDays: { day: string; date: string; color: string; hasLog: boolean }[];
+}) {
+  return (
+    <View style={styles.calendarRow}>
+      {weekDays.map((item) => {
+        const isSelected = item.date === selected;
+        const bgColor = isSelected ? colors.primaryContainer : item.color;
+
+        return (
+          <TouchableOpacity
+            key={item.date}
+            onPress={() => onSelect(item.date)}
+            activeOpacity={0.75}
+            style={[
+              styles.dayCell,
+              { backgroundColor: bgColor },
+              isSelected && { borderWidth: 4, borderColor: colors.ink } // Day Cell Selected Style
+            ]}
+          >
+            <Text style={styles.dayLabel}>{item.day}</Text>
+            <Text style={styles.dayNumber}>{item.date}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 function Header({ onBack }: { onBack?: () => void }) {
   return (
     <View style={styles.header}>
@@ -87,8 +124,17 @@ function MoodHistoryButton({ onPress }: { onPress?: () => void }) {
 function ResetCard({ onPress }: { onPress?: () => void }) {
   return (
     <View style={styles.resetCard}>
+      {/* Gambar maskot di sudut kanan bawah */}
+      <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
+        <Image
+          source={require("../assets/images/relx.png")}
+          style={{ position: "absolute", bottom: -12, right: -12, width: 104, height: 104, opacity: 0.9 }}
+          contentFit="contain"
+        />
+      </View>
+
       {/* Text content */}
-      <View style={styles.resetContent}>
+      <View style={[styles.resetContent, { zIndex: 2 }]}>
         <Text style={styles.resetTitle}>Reset pikiran mu</Text>
         <Text style={styles.resetBody}>
           Mulai mengatur kembali pernafasan mu, rileks kan pikiran
@@ -101,9 +147,6 @@ function ResetCard({ onPress }: { onPress?: () => void }) {
           <Text style={styles.resetBtnText}>Mulai</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Decorative blob */}
-      <View style={styles.resetDecorBlob} />
     </View>
   );
 }
@@ -175,6 +218,35 @@ export default function JournalScreen() {
   const [journalText, setJournalText] = useState("");
   const [entries, setEntries] = useState<JournalEntry[]>(JOURNAL_HISTORY);
 
+  // Menghasilkan daftar hari dari Senin hingga Minggu di minggu ini
+  const weekDays = useMemo(() => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    // Mencari tanggal hari Senin di minggu ini
+    const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+    const monday = new Date(today);
+    monday.setDate(diff);
+
+    const days = [];
+    const displayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ming"];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      days.push({
+        day: displayNames[i],
+        date: d.getDate().toString().padStart(2, "0"),
+        color: colors.surfaceCard,
+        hasLog: false,
+      });
+    }
+    return days;
+  }, []);
+
+  const [selectedDay, setSelectedDay] = useState(() => {
+    return new Date().getDate().toString().padStart(2, "0");
+  });
+
   const handleSave = () => {
     if (!journalText.trim()) return;
 
@@ -206,6 +278,13 @@ export default function JournalScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Kalender Mingguan */}
+          <WeekCalendar
+            selected={selectedDay}
+            onSelect={setSelectedDay}
+            weekDays={weekDays}
+          />
+
           {/* Lihat riwayat mood */}
           <MoodHistoryButton onPress={() => router.push("./mood-date")} />
 
@@ -224,7 +303,7 @@ export default function JournalScreen() {
         </ScrollView>
 
         {/* Bottom Navigation */}
-        <BottomNav />
+        <BottomNav active="journal" />
       </View>
     </SafeAreaView>
   );

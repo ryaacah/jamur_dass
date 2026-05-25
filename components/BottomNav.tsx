@@ -19,7 +19,14 @@ const IconStats = ({ color }: { color: string }) => (
   </Svg>
 );
 
-export default function BottomNav({ active }: { active?: "home" | "chart" }) {
+const IconJournal = ({ color }: { color: string }) => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color} />
+    <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke={color} />
+  </Svg>
+);
+
+export default function BottomNav({ active }: { active?: "home" | "chart" | "journal" }) {
   return (
     <View style={styles.bottomNavWrapper} pointerEvents="box-none">
       <View style={styles.bottomNav}>
@@ -31,6 +38,17 @@ export default function BottomNav({ active }: { active?: "home" | "chart" }) {
             accessibilityRole="button"
           >
             <IconHome color={active === "home" ? colors.ink : colors.inkSoft} />
+          </TouchableOpacity>
+        </Link>
+
+        <Link href="/journal" asChild>
+          <TouchableOpacity
+            style={StyleSheet.flatten([styles.navItem, active === "journal" && styles.navItemActive])}
+            activeOpacity={1}
+            accessibilityLabel="Jurnal"
+            accessibilityRole="button"
+          >
+            <IconJournal color={active === "journal" ? colors.ink : colors.inkSoft} />
           </TouchableOpacity>
         </Link>
 

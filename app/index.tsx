@@ -1,13 +1,17 @@
 import { MaterialIcons as Icon } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -17,7 +21,6 @@ import BottomNav from "../components/BottomNav";
 import { BAR_COLORS, colors, styles } from "./styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const DAY_NAMES = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const DAY_NAMES_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -54,42 +57,42 @@ const MOODS = [
   },
 ];
 
+// ─── Motivasi ─────────────────────────────────────────────────────────────────
+const MOTIVATIONAL_QUOTES = [
+  "Perasaanku valid. Aku berhak merasakan apa yang aku rasakan tanpa harus menjelaskannya pada siapapun.",
+  "Aku tidak harus menjadi produktif setiap saat. Istirahat adalah bagian dari proses, bukan kelemahan.",
+  "Aku sedang tumbuh. Setiap langkah kecil yang aku ambil hari ini adalah kemajuan yang nyata.",
+  "Aku layak dicintai — bukan karena apa yang aku capai, tapi karena aku ada dan aku berarti.",
+  "Hari yang berat bukan berarti hidup yang buruk. Badai ini akan berlalu dan aku cukup kuat untuk melewatinya.",
+  "Aku tidak harus membandingkan perjalananku dengan orang lain. Hidupku punya ritmenya sendiri.",
+  "Meminta bantuan adalah tanda keberanian, bukan kelemahan. Aku tidak harus menanggung semuanya sendiri.",
+  "Aku tidak harus sempurna. Yang aku butuhkan hanyalah terus mencoba dengan cara terbaikku hari ini.",
+  "Aku kuat. Aku tangguh. Aku bisa melewati semua ini.",
+  "Aku sudah melewati hal-hal sulit sebelumnya dan aku akan melewati ini juga.",
+  "Di dalam diriku ada kekuatan yang lebih besar dari rasa takut apapun yang aku rasakan hari ini.",
+  "Aku tidak menyerah. Setiap napas yang aku ambil adalah bukti bahwa aku masih berjuang dan itu luar biasa.",
+  "Aku lebih tangguh dari yang aku kira, lebih berani dari yang aku bayangkan, dan lebih mampu dari yang aku percaya.",
+];
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function WeekCalendar({
-  selected,
-  onSelect,
-  selectedMoodColor,
-  weekDays,
-}: {
-  selected: string;
-  onSelect: (date: string) => void;
-  selectedMoodColor: string | null;
-  weekDays: { day: string; date: string; color: string; hasLog: boolean }[];
-}) {
+function MotivationCard() {
+  const quote = useMemo(() => {
+    // Menggunakan hari sejak epoch (1 Jan 1970) agar selalu konsisten berubah tiap hari
+    const daysSinceEpoch = Math.floor(Date.now() / 86400000);
+    return MOTIVATIONAL_QUOTES[daysSinceEpoch % MOTIVATIONAL_QUOTES.length];
+  }, []);
+
   return (
-    <View style={styles.calendarRow}>
-      {weekDays.map((item) => {
-        const isSelected = item.date === selected;
-        const bgColor = isSelected 
-          ? (selectedMoodColor || colors.surfaceCard) 
-          : item.color;
-          
-        return (
-          <TouchableOpacity
-            key={item.date}
-            onPress={() => onSelect(item.date)}
-            activeOpacity={0.75}
-            style={[
-              styles.dayCell,
-              { backgroundColor: bgColor },
-            ]}
-          >
-            <Text style={styles.dayLabel}>{item.day}</Text>
-            <Text style={styles.dayNumber}>{item.date}</Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={[styles.card, { backgroundColor: colors.accentCream, padding: 20, paddingBottom: 36, position: "relative", overflow: "hidden" }]}>
+      <Text style={[styles.cardBody, { fontStyle: "italic", color: colors.ink, lineHeight: 22, zIndex: 2, position: "relative", paddingRight: 16 }]}>
+        {`"${quote}"`}
+      </Text>
+      <Image
+        source={require("../assets/images/mur.png")}
+        style={{ position: "absolute", width: 80, height: 80, bottom: -16, right: -16, zIndex: 1 }}
+        contentFit="contain"
+      />
     </View>
   );
 }
@@ -159,13 +162,20 @@ function QuickActions() {
           activeOpacity={0.8} 
           style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
         >
-          <View style={{ flex: 1 }}>
+          <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
+            <Image
+              source={require("../assets/images/mur-jur.png")}
+              style={{ position: "absolute", bottom: -8, left: -8, width: 72, height: 72, transform: [{ scaleX: -1 }], opacity: 0.9 }}
+              contentFit="contain"
+            />
+          </View>
+          <View style={{ flex: 1, zIndex: 2 }}>
             <Text style={styles.cardTitle}>Ceritakan Harimu</Text>
             <Text style={[styles.cardBody, { marginTop: 4 }]}>
               Ayo buat jurnal harian mu disini..
             </Text>
           </View>
-          <View style={styles.chevronRow}>
+          <View style={[styles.chevronRow, { zIndex: 2 }]}>
             <Text style={styles.chevron}>›</Text>
           </View>
         </TouchableOpacity>
@@ -177,13 +187,20 @@ function QuickActions() {
           activeOpacity={0.8} 
           style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}
         >
-          <View style={{ flex: 1 }}>
+          <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
+            <Image
+              source={require("../assets/images/relx.png")}
+              style={{ position: "absolute", bottom: -8, right: -8, width: 72, height: 72, opacity: 0.9 }}
+              contentFit="contain"
+            />
+          </View>
+          <View style={{ flex: 1, zIndex: 2 }}>
             <Text style={styles.cardTitle}>Atur pernafasan</Text>
             <Text style={[styles.cardBody, { marginTop: 4 }]}>
               Tenangkan pikiran mu, atur pernafasan mu disini...
             </Text>
           </View>
-          <View style={styles.chevronRow}>
+          <View style={[styles.chevronRow, { zIndex: 2 }]}>
             <Text style={styles.chevron}>›</Text>
           </View>
         </TouchableOpacity>
@@ -290,42 +307,58 @@ function DassChart() {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function Index() {
-  // Menghasilkan kalender mingguan secara real-time
-  const { weekDays, headerDate } = useMemo(() => {
+  // Menghasilkan tanggal hari ini untuk header
+  const headerDate = useMemo(() => {
     const today = new Date();
-    const header = `${DAY_NAMES_LONG[today.getDay()]}, ${today.getDate()} ${MONTH_NAMES[today.getMonth()]}`;
-
-    const days = [];
-    // Warna mock untuk progress chart di kalender
-    const mockColors = [
-      colors.accentYellow,
-      colors.accentBlue,
-      colors.accentRed,
-      colors.accentPurple,
-      colors.accentGreen,
-      colors.accentYellow,
-      colors.surfaceCard,
-    ];
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      days.push({
-        day: DAY_NAMES[d.getDay()],
-        date: d.getDate().toString().padStart(2, "0"),
-        color: mockColors[6 - i],
-        hasLog: i !== 0,
-      });
-    }
-    return { weekDays: days, headerDate: header };
+    return `${DAY_NAMES_LONG[today.getDay()]}, ${today.getDate()} ${MONTH_NAMES[today.getMonth()]}`;
   }, []);
 
-  // Set default state menggunakan tanggal hari ini (data terakhir di array = index 6)
-  const [selectedDay, setSelectedDay] = useState(weekDays[6].date);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   const activeMood = MOODS.find((m) => m.id === selectedMood);
   const selectedMoodColor = activeMood ? activeMood.color : null;
+
+  // State untuk nama panggilan
+  const [nickname, setNickname] = useState("");
+  const [tempName, setTempName] = useState("");
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  // Cek apakah nama panggilan sudah pernah disimpan
+  useEffect(() => {
+    const loadName = async () => {
+      try {
+        const savedName = await AsyncStorage.getItem("user_nickname");
+        if (savedName) {
+          setNickname(savedName);
+        } else {
+          setModalVisible(true);
+        }
+      } catch (error) {
+        console.error("Gagal memuat nama panggilan", error);
+      }
+    };
+    loadName();
+  }, []);
+
+  const handleSaveName = async () => {
+    if (tempName.trim()) {
+      try {
+        await AsyncStorage.setItem("user_nickname", tempName.trim());
+        setNickname(tempName.trim());
+        setModalVisible(false);
+      } catch (error) {
+        console.error("Gagal menyimpan nama panggilan", error);
+      }
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 11) return "Selamat pagi";
+    if (hour < 15) return "Selamat siang";
+    if (hour < 19) return "Selamat sore";
+    return "Selamat malam";
+  };
 
   return (
     
@@ -333,7 +366,9 @@ export default function Index() {
       <StatusBar style="dark" backgroundColor={colors.canvas} />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{headerDate}</Text>
+        <Text style={[styles.headerTitle, { flex: 1, marginRight: 8 }]} numberOfLines={1} adjustsFontSizeToFit>
+          {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
+        </Text>
         <Link href="./settings-notification" asChild>
           <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
             <Icon name="settings" size={26} color={colors.ink} />
@@ -345,13 +380,8 @@ export default function Index() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Weekly Calendar */}
-        <WeekCalendar 
-          selected={selectedDay} 
-          onSelect={setSelectedDay}
-          weekDays={weekDays}
-          selectedMoodColor={selectedMoodColor} 
-        />
+        {/* Motivation Card */}
+        <MotivationCard />
 
         {/* Mood Selector */}
         <MoodSelector selected={selectedMood} onSelect={setSelectedMood} />
@@ -371,6 +401,38 @@ export default function Index() {
 
       {/* Bottom Navigation */}
       <BottomNav active="home" />
+
+      {/* Modal Input Nama Panggilan */}
+      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <View style={[styles.modalTextGroup, { marginBottom: 8 }]}>
+              <Text style={styles.modalTitle}>Kenalan Dulu Yuk!</Text>
+              <Text style={styles.modalBody}>
+                Siapa nama panggilan yang kamu suka?
+              </Text>
+            </View>
+            <TextInput
+              style={[styles.textInput, { width: '100%', textAlign: 'center', marginBottom: 16 }]}
+              placeholder="Masukkan panggilan..."
+              placeholderTextColor={colors.inkSoft}
+              value={tempName}
+              onChangeText={setTempName}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtnContinue, { backgroundColor: colors.accentGreen, opacity: tempName.trim() ? 1 : 0.5 }]}
+                onPress={handleSaveName}
+                activeOpacity={0.8}
+                disabled={!tempName.trim()}
+              >
+                <Text style={styles.modalBtnText}>Mulai Perjalanan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

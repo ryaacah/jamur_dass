@@ -58,14 +58,14 @@ function BentoMetaGrid() {
     <View style={styles.bentoGrid}>
       {/* 21 Soal */}
       <View style={[styles.assesmenBentoCell, styles.bentoCellTertiary]}>
-        <Text style={styles.bentoIcon}>❓</Text>
+        {/* <Text style={styles.bentoIcon}>❓</Text> */}
         <Text style={styles.bentoValueTertiary}>21 Soal</Text>
         <Text style={styles.bentoLabelTertiary}>Singkat & Padat</Text>
       </View>
 
       {/* Privasi */}
       <View style={[styles.assesmenBentoCell, styles.bentoCellSecondary]}>
-        <Text style={styles.bentoIcon}>🛡️</Text>
+        {/* <Text style={styles.bentoIcon}>🛡️</Text> */}
         <Text style={styles.bentoValueSecondary}>Privasi</Text>
         <Text style={styles.bentoLabelSecondary}>100% Aman</Text>
       </View>
@@ -81,7 +81,7 @@ function InstructionCard() {
         <Text style={styles.displayTitle}>DASS-21</Text>
         <View style={styles.timeRow}>
           <Text style={styles.timeIcon}>⏱</Text>
-          <Text style={styles.timeText}>Estimasi waktu: ~3 menit</Text>
+          <Text style={styles.timeText}>Estimasi pengerjaan: ~3 menit</Text>
         </View>
       </View>
 

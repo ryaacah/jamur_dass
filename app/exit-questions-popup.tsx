@@ -1,13 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    Modal,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { colors, styles } from './styles';
 
@@ -126,8 +126,8 @@ function ExitConfirmModal({ visible, onContinue, onExit }: ExitModalProps) {
       animationType="fade"
       onRequestClose={onContinue}
     >
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
+      <Pressable style={styles.modalBackdrop} onPress={onContinue}>
+        <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
           {/* Text group */}
           <View style={styles.modalTextGroup}>
             <Text style={styles.modalTitle}>Ingin berhenti sejenak?</Text>
@@ -156,7 +156,7 @@ function ExitConfirmModal({ visible, onContinue, onExit }: ExitModalProps) {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Pressable>
     </Modal>
   );
 }
