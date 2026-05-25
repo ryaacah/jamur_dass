@@ -1,8 +1,12 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,77 +14,75 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Calendar, LocaleConfig } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/BottomNav";
+import { supabase } from "../lib/supabase";
 import { colors, styles } from "./styles";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JournalEntry {
   id: string;
-  date: string;
+  date: string;        // Format: YYYY-MM-DD
+  displayDate: string; // Format: "20 Feb"
   preview: string;
 }
 
-// ─── Static Data ─────────────────────────────────────────────────────────────
-const JOURNAL_HISTORY: JournalEntry[] = [
-  {
-    id: "1",
-    date: "20 Feb",
-    preview:
-      "Hari ini aku pergi berbelanja dengan teman ku, lalu setelah itu aku pergi membeli makan, aku beli makanan...",
-  },
-  {
-    id: "2",
-    date: "19 Feb",
-    preview:
-      "Hari ini aku pergi ke kampus untuk kelas mata kuliah, setelah kelas aku pergi ke kantin untuk makan siang kar...",
-  },
-  {
-    id: "3",
-    date: "18 Feb",
-    preview:
-      "Aku tadi pergi jalan jalan pagi buat olahraga, tapi di jalan aku malah laper jadinya aku milih belok untuk sar...",
-  },
-  {
-    id: "4",
-    date: "17 Feb",
-    preview: "",
-  },
-];
+// ─── Helper Functions ─────────────────────────────────────────────────────────
+const getLocalDateString = (d: Date) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatDisplayDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
+};
+
+// ─── Konfigurasi Kalender & Warna Mood ────────────────────────────────────────
+LocaleConfig.locales["id"] = {
+  monthNames: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"],
+  monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
+  dayNames: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"],
+  dayNamesShort: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+  today: "Hari ini",
+};
+LocaleConfig.defaultLocale = "id";
+
+const getMoodColor = (mood: string) => {
+  switch (mood) {
+    case "senang": return colors.accentYellow;
+    case "sedih":  return colors.accentBlue;
+    case "marah":  return colors.accentRed;
+    case "cemas":  return colors.accentPurple;
+    case "rileks": return colors.accentGreen;
+    default:       return colors.surfaceVariant;
+  }
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function WeekCalendar({
-  selected,
-  onSelect,
   weekDays,
 }: {
-  selected: string;
-  onSelect: (date: string) => void;
-  weekDays: { day: string; date: string; color: string; hasLog: boolean }[];
+  weekDays: { day: string; dateStr: string; dateLabel: string; color: string; hasLog: boolean }[];
 }) {
   return (
     <View style={styles.calendarRow}>
-      {weekDays.map((item) => {
-        const isSelected = item.date === selected;
-        const bgColor = isSelected ? colors.primaryContainer : item.color;
-
-        return (
-          <TouchableOpacity
-            key={item.date}
-            onPress={() => onSelect(item.date)}
-            activeOpacity={0.75}
-            style={[
-              styles.dayCell,
-              { backgroundColor: bgColor },
-              isSelected && { borderWidth: 4, borderColor: colors.ink } // Day Cell Selected Style
-            ]}
-          >
-            <Text style={styles.dayLabel}>{item.day}</Text>
-            <Text style={styles.dayNumber}>{item.date}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {weekDays.map((item) => (
+        <View
+          key={item.dateStr}
+          style={[styles.dayCell, { backgroundColor: item.color }]}
+        >
+          <Text style={styles.dayLabel}>{item.day}</Text>
+          <Text style={styles.dayNumber}>{item.dateLabel}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -96,10 +98,7 @@ function Header({ onBack }: { onBack?: () => void }) {
       >
         <Icon name="arrow-back" size={24} color={colors.ink} />
       </TouchableOpacity>
-
       <Text style={styles.headerTitle}>Jurnal</Text>
-
-      {/* Spacer to keep title centered */}
       <View style={styles.headerSpacer} />
     </View>
   );
@@ -124,7 +123,6 @@ function MoodHistoryButton({ onPress }: { onPress?: () => void }) {
 function ResetCard({ onPress }: { onPress?: () => void }) {
   return (
     <View style={styles.resetCard}>
-      {/* Gambar maskot di sudut kanan bawah */}
       <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
         <Image
           source={require("../assets/images/relx.png")}
@@ -132,18 +130,12 @@ function ResetCard({ onPress }: { onPress?: () => void }) {
           contentFit="contain"
         />
       </View>
-
-      {/* Text content */}
       <View style={[styles.resetContent, { zIndex: 2 }]}>
         <Text style={styles.resetTitle}>Reset pikiran mu</Text>
         <Text style={styles.resetBody}>
           Mulai mengatur kembali pernafasan mu, rileks kan pikiran
         </Text>
-        <TouchableOpacity
-          style={styles.resetBtn}
-          onPress={onPress}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.resetBtn} onPress={onPress} activeOpacity={0.8}>
           <Text style={styles.resetBtnText}>Mulai</Text>
         </TouchableOpacity>
       </View>
@@ -172,11 +164,7 @@ function JournalInput({
         scrollEnabled={false}
       />
       <View style={styles.saveRow}>
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={onSave}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.saveBtn} onPress={onSave} activeOpacity={0.8}>
           <Text style={styles.saveBtnText}>Simpan</Text>
         </TouchableOpacity>
       </View>
@@ -197,10 +185,15 @@ function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
           activeOpacity={0.8}
           onPress={() => router.push({
             pathname: './journal-detail',
-            params: { id: entry.id, date: entry.date, body: entry.preview }
+            params: { 
+              id: entry.id, 
+              displayDate: entry.displayDate, 
+              date: entry.date,      // ✅ FIX: ganti "rawDate" → "date"
+              body: entry.preview 
+            }
           })}
         >
-          <Text style={styles.entryDate}>{entry.date}</Text>
+          <Text style={styles.entryDate}>{entry.displayDate}</Text>
           {entry.preview ? (
             <Text style={styles.entryText} numberOfLines={2}>
               {entry.preview}
@@ -216,56 +209,178 @@ function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
 export default function JournalScreen() {
   const router = useRouter();
   const [journalText, setJournalText] = useState("");
-  const [entries, setEntries] = useState<JournalEntry[]>(JOURNAL_HISTORY);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isMoodModalVisible, setMoodModalVisible] = useState(false);
+  const [markedDates, setMarkedDates] = useState<any>({});
+
+  // Set default ke format YYYY-MM-DD hari ini
+  const [selectedDay] = useState(() => getLocalDateString(new Date()));
 
   // Menghasilkan daftar hari dari Senin hingga Minggu di minggu ini
   const weekDays = useMemo(() => {
     const today = new Date();
     const currentDay = today.getDay();
-    // Mencari tanggal hari Senin di minggu ini
     const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
     const monday = new Date(today);
     monday.setDate(diff);
 
-    const days = [];
     const displayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ming"];
+    const days = [];
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
+      const dateStr = getLocalDateString(d);
+      const moodMark = markedDates[dateStr];
+      const moodColor = moodMark?.customStyles?.container?.backgroundColor || colors.surfaceCard;
+
       days.push({
         day: displayNames[i],
-        date: d.getDate().toString().padStart(2, "0"),
-        color: colors.surfaceCard,
-        hasLog: false,
+        dateStr,
+        dateLabel: d.getDate().toString().padStart(2, "0"),
+        color: moodColor,
+        hasLog: !!moodMark,
       });
     }
     return days;
-  }, []);
+  }, [markedDates]);
 
-  const [selectedDay, setSelectedDay] = useState(() => {
-    return new Date().getDate().toString().padStart(2, "0");
-  });
+  // ── Load jurnal dari Supabase ──────────────────────────────────────────────
+  useEffect(() => {
+    const fetchJournals = async () => {
+      let currentId: string | null = null;
 
-  const handleSave = () => {
-    if (!journalText.trim()) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        currentId = session.user.id;
+      } else {
+        currentId = await AsyncStorage.getItem("user_uuid");
+      }
 
-    const now = new Date();
-    const dateLabel = now.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-    });
+      if (!currentId) return;
 
-    const newEntry: JournalEntry = {
-      id: Date.now().toString(),
-      date: dateLabel,
-      preview: journalText.trim(),
+      setUserId(currentId);
+
+      // ✅ FIX: pakai kolom "content" sesuai schema DB
+      const { data, error } = await supabase
+        .from("journals")
+        .select("id, date, content")
+        .eq("user_id", currentId)
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Gagal memuat jurnal:", error.message);
+        return;
+      }
+
+      if (data) {
+        setEntries(
+          data.map((d: any) => ({
+            id: d.id,
+            date: d.date,
+            displayDate: formatDisplayDate(d.date),
+            preview: d.content, // ✅ FIX: d.content bukan d.body
+          }))
+        );
+      }
     };
 
-    setEntries([newEntry, ...entries]);
-    setJournalText("");
+    fetchJournals();
+  }, []);
+
+  // ── Load data mood untuk kalender pop-up ──────────────────────────────────
+  useEffect(() => {
+    const fetchMoods = async () => {
+      if (!userId) return;
+      const { data, error } = await supabase
+        .from("moods")
+        .select("date, mood")
+        .eq("user_id", userId);
+
+      if (data && !error) {
+        const marks: any = {};
+        data.forEach((item: any) => {
+          marks[item.date] = {
+            customStyles: {
+              container: {
+                backgroundColor: getMoodColor(item.mood),
+                borderRadius: 8,
+                elevation: 2,
+              },
+              text: { color: colors.ink, fontWeight: "bold" },
+            },
+          };
+        });
+        setMarkedDates(marks);
+      }
+    };
+
+    fetchMoods();
+  }, [userId]);
+
+  // ── Simpan jurnal ─────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!journalText.trim()) return;
+
+    try {
+      let currentUserId = userId;
+
+      if (!currentUserId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          currentUserId = session.user.id;
+        } else {
+          currentUserId = await AsyncStorage.getItem("user_uuid");
+        }
+      }
+
+      if (!currentUserId) {
+        Alert.alert(
+          "Perhatian",
+          "ID Pengguna tidak ditemukan. Silakan isi nama panggilan terlebih dahulu."
+        );
+        return;
+      }
+
+      // ✅ FIX: pakai kolom "content" sesuai schema DB
+      const { data, error } = await supabase
+        .from("journals")
+        .insert([
+          {
+            user_id: currentUserId,
+            date: selectedDay,
+            content: journalText.trim(), // ✅ FIX: "content" bukan "body"
+          },
+        ])
+        .select("id, date, content") // ✅ FIX: select "content" bukan "body"
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newEntry: JournalEntry = {
+          id: data.id,
+          date: data.date,
+          displayDate: formatDisplayDate(data.date),
+          preview: data.content, // ✅ FIX: data.content bukan data.body
+        };
+
+        const updatedEntries = [newEntry, ...entries].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setEntries(updatedEntries);
+        setJournalText("");
+        Alert.alert("Berhasil", "Jurnal harianmu telah tersimpan!");
+      }
+    } catch (err: any) {
+      console.error("Gagal menyimpan jurnal:", err);
+      Alert.alert("Gagal", "Tidak dapat menyimpan jurnal: " + (err.message ?? "Unknown error"));
+    }
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.wrapper}>
@@ -279,14 +394,10 @@ export default function JournalScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Kalender Mingguan */}
-          <WeekCalendar
-            selected={selectedDay}
-            onSelect={setSelectedDay}
-            weekDays={weekDays}
-          />
+          <WeekCalendar weekDays={weekDays} />
 
           {/* Lihat riwayat mood */}
-          <MoodHistoryButton onPress={() => router.push("./mood-date")} />
+          <MoodHistoryButton onPress={() => setMoodModalVisible(true)} />
 
           {/* Reset pikiran card */}
           <ResetCard onPress={() => router.push("./breathing")} />
@@ -304,6 +415,120 @@ export default function JournalScreen() {
 
         {/* Bottom Navigation */}
         <BottomNav active="journal" />
+
+        {/* ── Modal Kalender Riwayat Mood ── */}
+        <Modal
+          visible={isMoodModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMoodModalVisible(false)}
+        >
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setMoodModalVisible(false)}
+          >
+            <View
+              style={[styles.modalCard, { padding: 16 }]}
+              onStartShouldSetResponder={() => true}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={styles.modalTitle}>Riwayat Mood</Text>
+                <TouchableOpacity
+                  onPress={() => setMoodModalVisible(false)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="close" size={24} color={colors.ink} />
+                </TouchableOpacity>
+              </View>
+
+              <View
+                style={{
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  borderWidth: 1,
+                  borderColor: colors.borderDefault,
+                }}
+              >
+                <Calendar
+                  markingType={"custom"}
+                  markedDates={markedDates}
+                  theme={{
+                    calendarBackground: colors.surfaceCard,
+                    textSectionTitleColor: colors.inkSoft,
+                    todayTextColor: colors.accentBlue,
+                    dayTextColor: colors.ink,
+                    textDisabledColor: colors.surfaceVariant,
+                    monthTextColor: colors.ink,
+                    arrowColor: colors.ink,
+                    textDayFontWeight: "500",
+                    textMonthFontWeight: "bold",
+                    textDayHeaderFontWeight: "600",
+                  }}
+                />
+              </View>
+
+              <View
+                style={{
+                  marginTop: 16,
+                  padding: 12,
+                  backgroundColor: colors.surfaceMuted,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.borderDefault,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: colors.ink,
+                    marginBottom: 8,
+                  }}
+                >
+                  Keterangan:
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {["senang", "sedih", "marah", "cemas", "rileks"].map((mood) => (
+                    <View
+                      key={mood}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        width: "45%",
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 14,
+                          height: 14,
+                          borderRadius: 4,
+                          marginRight: 6,
+                          backgroundColor: getMoodColor(mood),
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: colors.inkSoft,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {mood}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
       </View>
     </SafeAreaView>
   );

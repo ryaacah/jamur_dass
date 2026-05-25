@@ -186,11 +186,68 @@ export default function DASSFormScreen() {
     setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      // Selesai semua pertanyaan
+      // Selesai semua pertanyaan, hitung skor
+      let depression = 0;
+      let anxiety = 0;
+      let stress = 0;
+
+      Object.keys(answers).forEach((key) => {
+        const idx = parseInt(key);
+        const val = answers[idx] as number;
+        if (idx >= 0 && idx <= 6) depression += val;
+        else if (idx >= 7 && idx <= 13) anxiety += val;
+        else if (idx >= 14 && idx <= 20) stress += val;
+      });
+
+      // Skala DASS-21 perlu dikali 2 untuk dibandingkan dengan DASS-42 (opsional, tergantung interpretasi)
+      // Namun di database kita simpan skor aslinya atau skor DASS-21 total.
+      // Kita juga tentukan kategori keparahan.
+      const getCategory = (score: number, type: 'depression' | 'anxiety' | 'stress') => {
+        // Skala untuk DASS-21 (total skor dari 7 pertanyaan, range 0-21)
+        if (type === 'depression') {
+          if (score <= 4) return 'Normal';
+          if (score <= 6) return 'Mild';
+          if (score <= 10) return 'Moderate';
+          if (score <= 13) return 'Severe';
+          return 'Extremely Severe';
+        } else if (type === 'anxiety') {
+          if (score <= 3) return 'Normal';
+          if (score <= 4) return 'Mild';
+          if (score <= 7) return 'Moderate';
+          if (score <= 9) return 'Severe';
+          return 'Extremely Severe';
+        } else { // stress
+          if (score <= 7) return 'Normal';
+          if (score <= 9) return 'Mild';
+          if (score <= 12) return 'Moderate';
+          if (score <= 16) return 'Severe';
+          return 'Extremely Severe';
+        }
+      };
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('dass_results').insert([
+            {
+              user_id: user.id,
+              depression_score: depression,
+              anxiety_score: anxiety,
+              stress_score: stress,
+              depression_category: getCategory(depression, 'depression'),
+              anxiety_category: getCategory(anxiety, 'anxiety'),
+              stress_category: getCategory(stress, 'stress'),
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error('Error saving DASS results:', err);
+      }
+
       router.replace("./dass-history");
     }
   };

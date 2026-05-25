@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
+  Alert,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -12,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
 // ─── Login Screen ─────────────────────────────────────────────────────────────
@@ -22,9 +25,39 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    router.replace('/');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Peringatan', 'Silakan isi email dan password terlebih dahulu.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password,
+    });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Gagal Masuk', error.message);
+    } else {
+      // Ambil profile untuk mengupdate nickname lokal
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profile')
+          .select('nickname')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.nickname) {
+          await AsyncStorage.setItem('user_nickname', profile.nickname);
+        }
+      }
+      router.replace('/');
+    }
   };
 
   const handleRegister = () => {
@@ -48,7 +81,7 @@ export default function LoginScreen() {
           styles.headerBackBtn,
           { position: 'absolute', top: Math.max(insets.top + 16, 24), left: 16, zIndex: 10 },
         ]}
-        onPress={() => router.replace('/b-login')}
+        onPress={() => router.replace('/')}
         accessibilityRole="button"
         accessibilityLabel="Kembali"
       >
@@ -112,13 +145,14 @@ export default function LoginScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.primaryButton,
-              pressed && styles.primaryButtonPressed,
+              (pressed || loading) && styles.primaryButtonPressed,
             ]}
             onPress={handleLogin}
+            disabled={loading}
             accessibilityRole="button"
             accessibilityLabel="Masuk"
           >
-            <Text style={styles.primaryButtonText}>Masuk</Text>
+            <Text style={styles.primaryButtonText}>{loading ? 'Memuat...' : 'Masuk'}</Text>
           </Pressable>
         </View>
 

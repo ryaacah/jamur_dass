@@ -5,6 +5,7 @@ import { Link } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Modal,
   Pressable,
@@ -18,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
 import BottomNav from "../components/BottomNav";
+import { supabase } from "../lib/supabase";
 import { BAR_COLORS, colors, styles } from "./styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -314,6 +316,65 @@ export default function Index() {
   }, []);
 
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fungsi untuk mendapatkan format tanggal YYYY-MM-DD sesuai waktu lokal HP
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Memuat sesi dan mood hari ini saat halaman pertama kali dibuka
+  useEffect(() => {
+    const loadMoodAndSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+        const today = getLocalDateString();
+        
+        const { data } = await supabase
+          .from("moods")
+          .select("id, mood")
+          .eq("user_id", session.user.id)
+          .eq("date", today)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (data && data.mood) {
+          setSelectedMood(data.mood);
+        }
+      }
+    };
+    loadMoodAndSession();
+  }, []);
+
+  // Fungsi ketika mood ditekan: mengubah tampilan + menyimpan ke DB
+  const handleSelectMood = async (moodId: string) => {
+    setSelectedMood(moodId); // Ubah tampilan secara langsung
+    if (!userId) return; // Jika belum login, hanya ubah tampilan lokal
+
+    const today = getLocalDateString();
+    
+    // Cek apakah hari ini sudah ada data mood
+    const { data: existing } = await supabase
+      .from("moods")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .single();
+
+    if (existing) {
+      // Update data jika sudah ada
+      await supabase.from("moods").update({ mood: moodId }).eq("id", existing.id);
+    } else {
+      // Insert data baru jika belum ada
+      await supabase.from("moods").insert([{ user_id: userId, mood: moodId, date: today }]);
+    }
+  };
 
   const activeMood = MOODS.find((m) => m.id === selectedMood);
   const selectedMoodColor = activeMood ? activeMood.color : null;
@@ -327,7 +388,38 @@ export default function Index() {
   useEffect(() => {
     const loadName = async () => {
       try {
+        // 1. Cek local storage dulu
         const savedName = await AsyncStorage.getItem("user_nickname");
+        
+        // 2. Cek sesi Supabase
+        let { data: { session } } = await supabase.auth.getSession();
+        
+        // 3. Jika ada nickname lokal tapi belum ada sesi, sign in anonim sekarang
+        if (savedName && !session) {
+          const { data: { session: newSession }, error: signInError } = await supabase.auth.signInAnonymously();
+          if (!signInError && newSession) {
+            session = newSession;
+            // Upsert profile agar DB sinkron dengan lokal
+            await supabase.from('profile').upsert({ id: session.user.id, nickname: savedName, is_auth: false });
+          }
+        }
+
+        if (session) {
+          setUserId(session.user.id); // Set userId untuk mood tracking
+          // Jika ada sesi, ambil nickname dari DB jika tidak ada di AsyncStorage
+          const { data: profile } = await supabase
+            .from('profile')
+            .select('nickname')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile?.nickname) {
+            setNickname(profile.nickname);
+            await AsyncStorage.setItem("user_nickname", profile.nickname);
+            return;
+          }
+        }
+
         if (savedName) {
           setNickname(savedName);
         } else {
@@ -343,11 +435,51 @@ export default function Index() {
   const handleSaveName = async () => {
     if (tempName.trim()) {
       try {
+        // 1. Sign in secara anonim jika belum ada sesi
+        let { data: { session: existingSession } } = await supabase.auth.getSession();
+        let userId = existingSession?.user.id;
+
+        if (!existingSession) {
+          const { data: { session: newSession, user }, error: signInError } = await supabase.auth.signInAnonymously();
+          if (signInError) {
+            console.error("Gagal Anonymous Sign-in:", signInError.message);
+            // Jika anonim gagal, kita buat UUID lokal sebagai ID guest sementara
+            const localId = await AsyncStorage.getItem("user_uuid") || 
+                            Math.random().toString(36).substring(2, 15) + 
+                            Math.random().toString(36).substring(2, 15);
+            userId = localId;
+            await AsyncStorage.setItem("user_uuid", localId);
+          } else {
+            userId = user?.id;
+            existingSession = newSession;
+            if (userId) await AsyncStorage.setItem("user_uuid", userId);
+          }
+        }
+
+        // 2. Simpan ke database (tabel profile)
+        if (userId) {
+          setUserId(userId);
+          const { error: upsertError } = await supabase
+            .from('profile')
+            .upsert({ 
+              id: userId, 
+              nickname: tempName.trim(),
+              is_auth: !!existingSession?.user.email,
+              user_id: userId
+            });
+          
+          if (upsertError) {
+            console.error("Gagal simpan ke DB:", upsertError.message);
+          }
+        }
+
+        // 3. Simpan secara lokal
         await AsyncStorage.setItem("user_nickname", tempName.trim());
         setNickname(tempName.trim());
         setModalVisible(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Gagal menyimpan nama panggilan", error);
+        Alert.alert("Kesalahan", "Terjadi masalah saat menyimpan nama: " + (error.message || "Unknown error"));
       }
     }
   };
@@ -384,7 +516,7 @@ export default function Index() {
         <MotivationCard />
 
         {/* Mood Selector */}
-        <MoodSelector selected={selectedMood} onSelect={setSelectedMood} />
+        <MoodSelector selected={selectedMood} onSelect={handleSelectMood} />
 
         {/* Quick Actions Bento */}
         <QuickActions />
@@ -403,8 +535,8 @@ export default function Index() {
       <BottomNav active="home" />
 
       {/* Modal Input Nama Panggilan */}
-      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
             <View style={[styles.modalTextGroup, { marginBottom: 8 }]}>
               <Text style={styles.modalTitle}>Kenalan Dulu Yuk!</Text>
@@ -431,7 +563,7 @@ export default function Index() {
               </TouchableOpacity>
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </SafeAreaView>
   );

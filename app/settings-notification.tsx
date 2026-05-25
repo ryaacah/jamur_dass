@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -175,14 +176,12 @@ interface PengaturanScreenProps {
   onBack?: () => void;
   onDeleteData?: () => void;
   onLogout?: () => void;
-  userEmail?: string;
 }
 
 const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   onBack,
   onDeleteData,
   onLogout,
-  userEmail = 'example@gmail.com',
 }) => {
   const router = useRouter();
   const handleBack = onBack || (() => router.back());
@@ -200,14 +199,31 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
   const [avatar, setAvatar] = useState<string>('icon1');
   const [tempAvatar, setTempAvatar] = useState<string>('icon1');
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const loadName = async () => {
       try {
+        // 1. Ambil dari lokal dulu
         const savedName = await AsyncStorage.getItem('user_nickname');
         if (savedName) setNickname(savedName);
         const savedAvatar = await AsyncStorage.getItem('user_avatar');
         if (savedAvatar) setAvatar(savedAvatar);
+
+        // 2. Ambil dari Supabase untuk memastikan sinkronisasi
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: profile, error } = await supabase
+            .from('profile')
+            .select('nickname')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile?.nickname) {
+            setNickname(profile.nickname);
+            await AsyncStorage.setItem('user_nickname', profile.nickname);
+          }
+        }
       } catch (error) {
         console.error('Gagal memuat nama panggilan', error);
       }
@@ -215,19 +231,64 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     loadName();
   }, []);
 
+  // Mengecek sesi login di Supabase
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSessionEmail(session?.user?.email || null);
+    };
+    fetchSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionEmail(session?.user?.email || null);
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
   const handleSaveName = async () => {
-    if (tempName.trim()) {
-      try {
-        await AsyncStorage.setItem('user_nickname', tempName.trim());
-        await AsyncStorage.setItem('user_avatar', tempAvatar);
-        setNickname(tempName.trim());
-        setAvatar(tempAvatar);
-        setModalVisible(false);
-      } catch (error) {
-        console.error('Gagal menyimpan nama panggilan', error);
-      }
+  if (!tempName.trim()) return;
+
+  try {
+    // 1. Pastikan ada sesi (anonymous atau email)
+    let { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      session = data.session;
     }
-  };
+
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Tidak bisa mendapatkan user ID');
+
+    // 2. Simpan lokal
+    await AsyncStorage.setItem('user_nickname', tempName.trim());
+    await AsyncStorage.setItem('user_avatar', tempAvatar);
+    await AsyncStorage.setItem('user_uuid', userId);
+    setNickname(tempName.trim());
+    setAvatar(tempAvatar);
+
+    // 3. Upsert ke DB - pastikan kolom sesuai schema
+    const { error: upsertError } = await supabase
+      .from('profile')
+      .upsert({
+        id: userId,
+        user_id: userId,
+        nickname: tempName.trim(),
+        is_auth: !!session?.user?.email,// false kalau anonymous
+      }, {
+        onConflict: 'id', // pastikan upsert berdasarkan PK
+      });
+
+    if (upsertError) throw upsertError;
+
+    setModalVisible(false);
+    Alert.alert('Sukses', 'Profil berhasil disimpan!');
+  } catch (error: any) {
+    console.error('Gagal menyimpan profil:', error);
+    Alert.alert('Kesalahan', error.message || 'Gagal menyimpan perubahan');
+  }
+};
 
   // ── Assesmen State ──────────────────────────────────────────────────────────
   const [assesmenSelectedDays, setAssesmenSelectedDays] = useState<DayId[]>([
@@ -296,6 +357,16 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const handleAssesmenToggleDay = (day: DayId) =>
     toggleDay(day, setAssesmenSelectedDays, assesmenSelectedDays);
 
+  // Fungsi logout yang tersambung dengan Supabase
+  const handleLogout = async () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      await supabase.auth.signOut();
+      router.replace('/login');
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -345,7 +416,13 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               </View>
               <View style={localStyles.profilRow}>
                 <Icon name="email" size={20} color={colors.inkSoft} />
-                <Text style={localStyles.profilText}>{userEmail}</Text>
+                {sessionEmail ? (
+                  <Text style={localStyles.profilText}>{sessionEmail}</Text>
+                ) : (
+                  <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
+                    <Text style={[localStyles.profilText, { color: colors.accentBlue, fontWeight: '700' }]}>Masuk akun</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -440,7 +517,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         <View style={localStyles.logoutContainer}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={onLogout ? onLogout : () => router.replace('/b-login')}
+            onPress={handleLogout}
             style={[localStyles.akunButton, { backgroundColor: colors.accentRed }]}
             accessibilityRole="button"
             accessibilityLabel="Keluar dari akun"
@@ -461,8 +538,8 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
       </ScrollView>
 
       {/* ── Modal Edit Nama ──────────────────────────────────────────────── */}
-      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
             <View style={[styles.modalTextGroup, { marginBottom: 16 }]}>
               <Text style={styles.modalTitle}>Ubah Profil</Text>
@@ -514,7 +591,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       {/* ── Custom Time Picker Modal (Ala image.png) ──────────────────────── */}

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
+  Alert,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -12,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
 // ─── Register Screen ─────────────────────────────────────────────────────────────
@@ -22,9 +25,59 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    router.replace('/');
+  const handleRegister = async () => {
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Peringatan', 'Silakan isi semua form terlebih dahulu.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Gagal', 'Password dan konfirmasi password tidak cocok.');
+      return;
+    }
+
+    setLoading(true);
+    
+    // 1. Mendaftarkan akun ke Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: password,
+    });
+
+    if (error) {
+      setLoading(false);
+      // Cek apakah errornya karena email sudah dipakai
+      if (error.message.toLowerCase().includes('already registered')) {
+        Alert.alert('Gagal', 'Email ini sudah terdaftar. Silakan gunakan email lain atau langsung masuk.');
+      } else {
+        Alert.alert('Gagal Daftar', error.message);
+      }
+      return;
+    }
+
+    // 2. Jika berhasil, simpan email dan id ke tabel `profile`
+    if (data.user) {
+      const localNickname = await AsyncStorage.getItem('user_nickname');
+      const { error: profileError } = await supabase
+        .from('profile')
+        .upsert([{ 
+          id: data.user.id, 
+          email: data.user.email, 
+          user_id: data.user.id,
+          nickname: localNickname,
+          is_auth: true
+        }]);
+
+      if (profileError) console.error('Gagal insert profile:', profileError);
+    }
+
+    setLoading(false);
+    Alert.alert('Berhasil', 'Pendaftaran berhasil! Silakan masuk menggunakan akun tersebut.', [
+      { text: 'OK', onPress: () => router.replace('/login') }
+    ]);
   };
 
   const handleLoginRedirect = () => {
@@ -108,17 +161,36 @@ export default function RegisterScreen() {
             />
           </View>
 
+          {/* Confirm Password Field */}
+          <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
+            <Text style={styles.fieldLabel}>Konfirmasi Password</Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                confirmPasswordFocused && styles.textInputFocused,
+              ]}
+              placeholder="••••••••"
+              placeholderTextColor="rgba(122, 106, 114, 0.6)"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              onFocus={() => setConfirmPasswordFocused(true)}
+              onBlur={() => setConfirmPasswordFocused(false)}
+            />
+          </View>
+
           {/* Primary Login Button */}
           <Pressable
             style={({ pressed }) => [
               styles.primaryButton,
-              pressed && styles.primaryButtonPressed,
+              (pressed || loading) && styles.primaryButtonPressed,
             ]}
             onPress={handleRegister}
+            disabled={loading}
             accessibilityRole="button"
             accessibilityLabel="Daftar"
           >
-            <Text style={styles.primaryButtonText}>Daftar</Text>
+            <Text style={styles.primaryButtonText}>{loading ? 'Memproses...' : 'Daftar'}</Text>
           </Pressable>
         </View>
 
