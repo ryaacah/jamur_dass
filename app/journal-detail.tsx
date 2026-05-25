@@ -1,4 +1,5 @@
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -15,7 +16,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNav from '../components/BottomNav';
 import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
@@ -32,10 +32,23 @@ const MOOD_CONFIG: Record<string, { image: any; label: string }> = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MoodDisplay({ mood }: { mood: string | null }) {
+function MoodDisplay({ mood, date }: { mood: string | null; date: string }) {
+  // Cek apakah tanggal jurnal adalah hari ini
+  const isToday = React.useMemo(() => {
+    if (!date) return false;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    return date === todayStr;
+  }, [date]);
+
   if (!mood) return null;
 
   const config = MOOD_CONFIG[mood.toLowerCase()] ?? MOOD_CONFIG['senang'];
+
+  const textPrefix = isToday ? "Hari ini kamu " : "Hari itu kamu ";
 
   return (
     <View style={{
@@ -43,19 +56,17 @@ function MoodDisplay({ mood }: { mood: string | null }) {
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 20,
-      marginTop: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: 12,
+      marginTop: 16,
     }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-        <Text style={{ fontSize: 14, color: colors.inkSoft, fontWeight: '600' }}>Hari itu kamu </Text>
-        <Text style={{ fontSize: 16, color: colors.ink, fontWeight: 'bold' }}>sedang {config.label}</Text>
+      <View style={{ flex: 1, justifyContent: 'center', paddingRight: 8 }}>
+        <Text style={{ lineHeight: 32 }}>
+          <Text style={{ fontSize: 18, color: colors.inkSoft, fontWeight: '600' }}>{textPrefix}</Text>
+          <Text style={{ fontSize: 24, color: colors.ink, fontWeight: 'bold' }}>sedang {config.label}</Text>
+        </Text>
       </View>
       <Image
         source={config.image}
-        style={{ width: 36, height: 36, marginLeft: 8 }}
+        style={{ width: 80, height: 80 }}
         contentFit="contain"
       />
     </View>
@@ -192,7 +203,7 @@ export default function JournalDetailScreen() {
           {loadingMood ? (
             <ActivityIndicator color={colors.ink} style={{ marginVertical: 20 }} />
           ) : (
-            <MoodDisplay mood={mood} />
+            <MoodDisplay mood={mood} date={rawDate} />
           )}
 
           {/* Journal Entry Card */}

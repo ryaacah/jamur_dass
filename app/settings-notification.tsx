@@ -419,7 +419,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
                 {sessionEmail ? (
                   <Text style={localStyles.profilText}>{sessionEmail}</Text>
                 ) : (
-                  <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
+                  <TouchableOpacity onPress={() => router.push('/b-login')} activeOpacity={0.7}>
                     <Text style={[localStyles.profilText, { color: colors.accentBlue, fontWeight: '700' }]}>Masuk akun</Text>
                   </TouchableOpacity>
                 )}

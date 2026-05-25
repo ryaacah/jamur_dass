@@ -1,4 +1,5 @@
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
@@ -13,11 +14,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
-// ─── Login Screen ─────────────────────────────────────────────────────────────
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -34,54 +33,81 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: password,
-    });
-    setLoading(false);
 
-    if (error) {
-      Alert.alert('Gagal Masuk', error.message);
-    } else {
-      // Ambil profile untuk mengupdate nickname lokal
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profile')
-          .select('nickname')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile?.nickname) {
-          await AsyncStorage.setItem('user_nickname', profile.nickname);
+    // Kita gunakan setTimeout 100ms agar UI sempat memperbarui tulisan tombol jadi "Memuat..."
+    setTimeout(async () => {
+      try {
+        console.log('--- Mulai Test AsyncStorage ---');
+        // Test apakah AsyncStorage hang
+        await AsyncStorage.setItem('test_key', 'test_value');
+        console.log('AsyncStorage aman.');
+
+        console.log('--- Mulai request Supabase ---');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password,
+        });
+
+        if (error) {
+          setLoading(false);
+          Alert.alert('Gagal Masuk', error.message);
+          return;
         }
+
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('profile')
+            .select('nickname')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+          if (profile?.nickname) {
+            await AsyncStorage.setItem('user_nickname', profile.nickname);
+          }
+        }
+
+        setLoading(false);
+        Alert.alert(
+          'Berhasil',
+          'Login berhasil! Klik Lanjut untuk ke halaman utama.',
+          [
+            {
+              text: 'Lanjut',
+              onPress: () => {
+                router.replace('/');
+              }
+            }
+          ]
+        );
+
+      } catch (err: any) {
+        setLoading(false);
+        console.error('Error Fatal:', err);
+        Alert.alert('Error Sistem', err.message || 'Gagal mengeksekusi login.');
       }
-      router.replace('/');
-    }
+    }, 100);
   };
 
   const handleRegister = () => {
-    router.replace('./register');
+    router.replace('/register');
   };
 
   return (
     <View style={styles.wrapper}>
       <StatusBar style="dark" backgroundColor="transparent" translucent />
 
-      {/* Background Image */}
       <ImageBackground
         source={require('../assets/images/bg_splash.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
 
-      {/* ── Tombol Back ── */}
       <TouchableOpacity
         style={[
           styles.headerBackBtn,
           { position: 'absolute', top: Math.max(insets.top + 16, 24), left: 16, zIndex: 10 },
         ]}
-        onPress={() => router.replace('/')}
+        onPress={() => router.push('/')}
         accessibilityRole="button"
         accessibilityLabel="Kembali"
       >
@@ -93,7 +119,6 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ── */}
         <View style={styles.loginHeader}>
           <Text style={styles.loginHeaderTitle}>Masuk</Text>
           <Text style={styles.loginHeaderSubtitle}>
@@ -101,16 +126,11 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {/* ── Form Card ── */}
         <View style={styles.formCard}>
-          {/* Email Field */}
           <View style={styles.fieldWrapper}>
             <Text style={styles.fieldLabel}>Email</Text>
             <TextInput
-              style={[
-                styles.textInput,
-                emailFocused && styles.textInputFocused,
-              ]}
+              style={[styles.textInput, emailFocused && styles.textInputFocused]}
               placeholder="contoh@email.com"
               placeholderTextColor="rgba(122, 106, 114, 0.6)"
               keyboardType="email-address"
@@ -123,14 +143,10 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Password Field */}
           <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
             <Text style={styles.fieldLabel}>Password</Text>
             <TextInput
-              style={[
-                styles.textInput,
-                passwordFocused && styles.textInputFocused,
-              ]}
+              style={[styles.textInput, passwordFocused && styles.textInputFocused]}
               placeholder="••••••••"
               placeholderTextColor="rgba(122, 106, 114, 0.6)"
               secureTextEntry
@@ -141,7 +157,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Primary Login Button */}
           <Pressable
             style={({ pressed }) => [
               styles.primaryButton,
@@ -156,7 +171,6 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
-        {/* ── Footer ── */}
         <View style={styles.loginFooter}>
           <Text style={styles.footerText}>
             Belum punya akun?{' '}

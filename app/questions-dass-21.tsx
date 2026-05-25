@@ -15,7 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { colors, styles } from './styles'; // Pastikan styles sudah dibuat di index.styles.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
+import { colors, styles } from './styles';
 
 // ─── Aset gambar ──────────────────────────────────────────────────────────────
 const ETIKET_0 = require("../assets/images/etiket0.png");
@@ -26,38 +28,63 @@ const ETIKET_3 = require("../assets/images/etiket3.png");
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type AnswerValue = 0 | 1 | 2 | 3;
 
+export type Severity =
+  | 'Normal'
+  | 'Ringan'
+  | 'Sedang'
+  | 'Berat'
+  | 'Sangat Parah';
+
 interface AnswerOption {
   value:       AnswerValue;
   label:       string;
   description: string;
   image:       ImageSource;
-  // key harus cocok dengan nama style di StyleSheet
   colorStyle:  'option0' | 'option1' | 'option2' | 'option3';
 }
 
+// ─── Pemetaan subskala DASS-21 ────────────────────────────────────────────────
+//
+// Index di bawah merujuk ke posisi pertanyaan dalam array DASS_QUESTIONS (0-based).
+// Urutan item mengikuti standar DASS-21 Lovibond (1995):
+//
+//   Depresi  : item 3, 5, 10, 13, 16, 17, 21  → index 2, 4, 9, 12, 15, 16, 20
+//   Kecemasan: item 2, 4, 7,  9, 15, 19, 20   → index 1, 3, 6,  8, 14, 18, 19
+//   Stres    : item 1, 6, 8, 11, 12, 14, 18   → index 0, 5, 7, 10, 11, 13, 17
+//
+const SUBSCALE_INDICES = {
+  depression: [2, 4, 9, 12, 15, 16, 20],
+  anxiety:    [1, 3, 6,  8, 14, 18, 19],
+  stress:     [0, 5, 7, 10, 11, 13, 17],
+} as const;
+
 // ─── List Pertanyaan ──────────────────────────────────────────────────────────
-const DASS_QUESTIONS = [
-  "Saya sama sekali tidak dapat merasakan perasaan positif (contoh: merasa gembira, bangga, dsb).",
-  "Saya merasa sulit berinisiatif melakukan sesuatu",
-  "Saya merasa tidak ada lagi yang bisa saya harapkan",
-  "Saya merasa sedih dan tertekan.",
-  "Saya tidak bisa merasa antusias terhadap hal apapun.",
-  "Saya merasa diri saya tidak berharga.",
-  "Saya merasa hidup ini tidak berarti.",
-  "Saya merasa rongga mulut saya kering.",
-  "Saya merasa kesulitan bernafas (misalnya seringkali terengah-engah atau tidak dapat bernapas padahal tidak melakukan aktivitas fisik sebelumnya).",
-  "Saya merasa gemetar (misalnya pada tangan).",
-  "Saya merasa khawatir dengan situasi di mana saya mungkin menjadi panik dan mempermalukan diri sendiri.",
-  "Saya merasa hampir panik",
-  "Saya menyadari kondisi jantung saya (seperti meningkatnya atau melemahnya detak jantung) meskipun sedang tidak melakukan aktivitas fisik.",
-  "Saya merasa ketakutan tanpa alasan yang jelas.",
-  "Saya merasa sulit untuk beristirahat.",
-  "Saya cenderung menunjukkan reaksi berlebihan terhadap suatu situasi.",
-  "Saya merasa energi saya terkuras karena terlalu cemas.",
-  "Saya merasa gelisah.",
-  "Saya merasa sulit untuk merasa tenang",
-  "Saya sulit untuk bersabar dalam menghadapi gangguan yang terjadi ketika sedang melakukan sesuatu",
-  "Perasaan saya mudah tergugah atau tersentuh."
+//
+// Urutan sesuai formulir DASS-21 asli (item 1–21).
+// Terjemahan sudah disesuaikan dengan makna asli Bahasa Inggris.
+//
+const DASS_QUESTIONS: string[] = [
+  /* 01 – Stres     */ "Saya merasa sulit untuk menenangkan diri",
+  /* 02 – Kecemasan */ "Saya merasa rongga mulut saya kering",
+  /* 03 – Depresi   */ "Saya sama sekali tidak dapat merasakan perasaan positif apapun",
+  /* 04 – Kecemasan */ "Saya mengalami kesulitan bernapas (misalnya terengah-engah atau tidak dapat bernapas padahal tidak sedang melakukan aktivitas fisik)",
+  /* 05 – Depresi   */ "Saya merasa sulit untuk berinisiatif melakukan sesuatu",
+  /* 06 – Stres     */ "Saya cenderung bereaksi berlebihan terhadap suatu situasi",
+  /* 07 – Kecemasan */ "Saya merasa gemetar (misalnya pada tangan)",
+  /* 08 – Stres     */ "Saya merasa banyak mengeluarkan energi karena ketegangan",
+  /* 09 – Kecemasan */ "Saya merasa khawatir berada dalam situasi di mana saya mungkin panik dan mempermalukan diri sendiri",
+  /* 10 – Depresi   */ "Saya merasa tidak ada hal yang dapat saya nantikan",
+  /* 11 – Stres     */ "Saya merasa mudah gelisah dan tidak tenang",
+  /* 12 – Stres     */ "Saya merasa sulit untuk bersantai atau merilekskan diri",
+  /* 13 – Depresi   */ "Saya merasa sedih dan murung",
+  /* 14 – Stres     */ "Saya tidak toleran terhadap apapun yang menghalangi saya dalam menyelesaikan aktivitas saya",
+  /* 15 – Kecemasan */ "Saya merasa hampir panik",
+  /* 16 – Depresi   */ "Saya tidak mampu merasa antusias terhadap apapun",
+  /* 17 – Depresi   */ "Saya merasa diri saya tidak berharga sebagai seorang manusia",
+  /* 18 – Stres     */ "Saya merasa mudah tersinggung",
+  /* 19 – Kecemasan */ "Saya menyadari detak jantung saya tanpa sedang melakukan aktivitas fisik (misalnya detak jantung meningkat atau tidak beraturan)",
+  /* 20 – Kecemasan */ "Saya merasa takut tanpa alasan yang jelas",
+  /* 21 – Depresi   */ "Saya merasa hidup ini tidak berarti",
 ];
 
 // ─── Data pilihan jawaban ─────────────────────────────────────────────────────
@@ -92,12 +119,70 @@ const ANSWER_OPTIONS: AnswerOption[] = [
   },
 ];
 
+// ─── Logika Perhitungan Skor ──────────────────────────────────────────────────
+
+/**
+ * Menjumlahkan skor mentah dari 7 item subskala,
+ * lalu dikalikan 2 agar setara dengan norma DASS-42.
+ *
+ * Rumus: skor_subskala = (Σ 7 item) × 2
+ * Range hasil: 0 – 42
+ */
+function calculateSubscaleScore(
+  answers: Record<number, AnswerValue>,
+  indices: readonly number[],
+): number {
+  const rawSum = indices.reduce((sum, idx) => sum + (answers[idx] ?? 0), 0);
+  return rawSum * 2;
+}
+
+/**
+ * Menentukan kategori keparahan berdasarkan skor yang sudah dikali 2.
+ * Menggunakan cut-off standar Lovibond (1995).
+ *
+ * Tabel cut-off (skor × 2):
+ * ┌──────────────┬──────────┬───────────┬────────┐
+ * │ Kategori     │ Depresi  │ Kecemasan │ Stres  │
+ * ├──────────────┼──────────┼───────────┼────────┤
+ * │ Normal       │  0 –  9  │   0 –  7  │  0–14  │
+ * │ Ringan       │ 10 – 13  │   8 –  9  │ 15–18  │
+ * │ Sedang       │ 14 – 20  │  10 – 14  │ 19–25  │
+ * │ Berat        │ 21 – 27  │  15 – 19  │ 26–33  │
+ * │ Sangat Parah │   28+    │    20+    │  34+   │
+ * └──────────────┴──────────┴───────────┴────────┘
+ */
+function getSeverityCategory(
+  score: number,
+  type: 'depression' | 'anxiety' | 'stress',
+): Severity {
+  if (type === 'depression') {
+    if (score <= 9)  return 'Normal';
+    if (score <= 13) return 'Ringan';
+    if (score <= 20) return 'Sedang';
+    if (score <= 27) return 'Berat';
+    return 'Sangat Parah';
+  }
+
+  if (type === 'anxiety') {
+    if (score <= 7)  return 'Normal';
+    if (score <= 9)  return 'Ringan';
+    if (score <= 14) return 'Sedang';
+    if (score <= 19) return 'Berat';
+    return 'Sangat Parah';
+  }
+
+  // stress
+  if (score <= 14) return 'Normal';
+  if (score <= 18) return 'Ringan';
+  if (score <= 25) return 'Sedang';
+  if (score <= 33) return 'Berat';
+  return 'Sangat Parah';
+}
+
 // ─── Sub-komponen ─────────────────────────────────────────────────────────────
 
-/** Progress bar + label "X dari Y" */
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = total > 0 ? (current / total) * 100 : 0;
-
   return (
     <View style={styles.progressSection}>
       <View style={styles.progressTrack}>
@@ -110,7 +195,6 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   );
 }
 
-/** Kartu pertanyaan */
 function QuestionCard({ text }: { text: string }) {
   return (
     <View style={styles.questionCard}>
@@ -119,7 +203,6 @@ function QuestionCard({ text }: { text: string }) {
   );
 }
 
-/** Satu tombol pilihan jawaban */
 function OptionButton({
   option,
   isSelected,
@@ -142,7 +225,6 @@ function OptionButton({
       accessibilityState={{ selected: isSelected }}
       accessibilityLabel={`Pilihan ${option.value}: ${option.label}. ${option.description}`}
     >
-      {/* Gambar Etiket Pilihan */}
       <View style={styles.etiketWrapper}>
         <Image
           source={option.image}
@@ -152,7 +234,6 @@ function OptionButton({
         <Text style={styles.etiketText}>{option.value}</Text>
       </View>
 
-      {/* Teks label & deskripsi */}
       <View style={styles.optionTextContainer}>
         <Text style={styles.optionLabel}>{option.label}</Text>
         <Text style={styles.optionDescription}>{option.description}</Text>
@@ -164,23 +245,23 @@ function OptionButton({
 // ─── Screen utama ─────────────────────────────────────────────────────────────
 export default function DASSFormScreen() {
   const router = useRouter();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
+  const [currentIndex, setCurrentIndex]       = useState(0);
+  const [answers, setAnswers]                 = useState<Record<number, AnswerValue>>({});
   const [exitModalVisible, setExitModalVisible] = useState(false);
 
-  // Mencegat tombol fisik "back" di perangkat (khususnya Android)
   useEffect(() => {
     const onBackPress = () => {
       setExitModalVisible(true);
-      return true; // Mencegah aksi back bawaan
+      return true;
     };
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
   }, []);
 
+  const totalQuestions        = DASS_QUESTIONS.length;
   const currentQuestionNumber = currentIndex + 1;
-  const totalQuestions = DASS_QUESTIONS.length;
-  const questionText = DASS_QUESTIONS[currentIndex];
+  const questionText          = DASS_QUESTIONS[currentIndex];
+  const isNextDisabled        = answers[currentIndex] === undefined;
 
   const handleAnswer = (value: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [currentIndex]: value }));
@@ -189,76 +270,54 @@ export default function DASSFormScreen() {
   const handleNext = async () => {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex((prev) => prev + 1);
-    } else {
-      // Selesai semua pertanyaan, hitung skor
-      let depression = 0;
-      let anxiety = 0;
-      let stress = 0;
+      return;
+    }
 
-      Object.keys(answers).forEach((key) => {
-        const idx = parseInt(key);
-        const val = answers[idx] as number;
-        if (idx >= 0 && idx <= 6) depression += val;
-        else if (idx >= 7 && idx <= 13) anxiety += val;
-        else if (idx >= 14 && idx <= 20) stress += val;
-      });
+    // ── Semua pertanyaan selesai: hitung skor ──────────────────────────────
 
-      // Skala DASS-21 perlu dikali 2 untuk dibandingkan dengan DASS-42 (opsional, tergantung interpretasi)
-      // Namun di database kita simpan skor aslinya atau skor DASS-21 total.
-      // Kita juga tentukan kategori keparahan.
-      const getCategory = (score: number, type: 'depression' | 'anxiety' | 'stress') => {
-        // Skala untuk DASS-21 (total skor dari 7 pertanyaan, range 0-21)
-        if (type === 'depression') {
-          if (score <= 4) return 'Normal';
-          if (score <= 6) return 'Mild';
-          if (score <= 10) return 'Moderate';
-          if (score <= 13) return 'Severe';
-          return 'Extremely Severe';
-        } else if (type === 'anxiety') {
-          if (score <= 3) return 'Normal';
-          if (score <= 4) return 'Mild';
-          if (score <= 7) return 'Moderate';
-          if (score <= 9) return 'Severe';
-          return 'Extremely Severe';
-        } else { // stress
-          if (score <= 7) return 'Normal';
-          if (score <= 9) return 'Mild';
-          if (score <= 12) return 'Moderate';
-          if (score <= 16) return 'Severe';
-          return 'Extremely Severe';
-        }
-      };
+    // 1. Jumlahkan skor tiap subskala lalu kalikan 2 (konversi ke skala DASS-42)
+    const depressionScore = calculateSubscaleScore(answers, SUBSCALE_INDICES.depression);
+    const anxietyScore    = calculateSubscaleScore(answers, SUBSCALE_INDICES.anxiety);
+    const stressScore     = calculateSubscaleScore(answers, SUBSCALE_INDICES.stress);
 
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('dass_results').insert([
-            {
-              user_id: user.id,
-              depression_score: depression,
-              anxiety_score: anxiety,
-              stress_score: stress,
-              depression_category: getCategory(depression, 'depression'),
-              anxiety_category: getCategory(anxiety, 'anxiety'),
-              stress_category: getCategory(stress, 'stress'),
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Error saving DASS results:', err);
+    // 2. Tentukan kategori keparahan berdasarkan cut-off Lovibond (1995)
+    const depressionCategory = getSeverityCategory(depressionScore, 'depression');
+    const anxietyCategory    = getSeverityCategory(anxietyScore,    'anxiety');
+    const stressCategory     = getSeverityCategory(stressScore,     'stress');
+
+    // 3. Simpan ke Supabase
+    try {
+      let currentUserId = null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        currentUserId = session.user.id;
+      } else {
+        currentUserId = await AsyncStorage.getItem('user_uuid');
       }
 
-      router.replace("./dass-history");
+      if (currentUserId) {
+        await supabase.from('dass_results').insert([
+          {
+            user_id:              currentUserId,
+            depression_score:     depressionScore,
+            anxiety_score:        anxietyScore,
+            stress_score:         stressScore,
+            depression_category:  depressionCategory,
+            anxiety_category:     anxietyCategory,
+            stress_category:      stressCategory,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error('Error saving DASS results:', err);
     }
+
+    router.replace('./dass-history');
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
   };
-
-  const isNextDisabled = answers[currentIndex] === undefined;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -281,25 +340,19 @@ export default function DASSFormScreen() {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Formulir DASS-21</Text>
-
-        {/* Spacer agar judul tetap di tengah */}
         <View style={styles.headerPlaceholder} />
       </View>
 
-      {/* ── Konten yang bisa di-scroll ─────────────────────────── */}
+      {/* ── Konten ─────────────────────────────────────────────── */}
       <ScrollView
         style={styles.wrapper}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Progress */}
         <ProgressBar current={currentQuestionNumber} total={totalQuestions} />
-
-        {/* Kartu pertanyaan */}
         <QuestionCard text={questionText} />
 
-        {/* Pilihan jawaban */}
         <View style={styles.optionsStack}>
           {ANSWER_OPTIONS.map((option) => (
             <OptionButton
@@ -311,26 +364,28 @@ export default function DASSFormScreen() {
           ))}
         </View>
 
-        {/* ── Navigasi Antar Pertanyaan ── */}
+        {/* ── Navigasi ── */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 32, marginBottom: 24, gap: 16 }}>
           <TouchableOpacity
             style={[
               styles.primaryButton,
               { flex: 1, backgroundColor: colors.surfaceVariant },
-              currentIndex === 0 && { opacity: 0 }
+              currentIndex === 0 && { opacity: 0 },
             ]}
             onPress={handlePrev}
             disabled={currentIndex === 0}
             activeOpacity={0.8}
           >
-            <Text style={[styles.primaryButtonText, { color: colors.ink, fontWeight: '700' }]}>Sebelumnya</Text>
+            <Text style={[styles.primaryButtonText, { color: colors.ink, fontWeight: '700' }]}>
+              Sebelumnya
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
               styles.primaryButton,
               { flex: 1, backgroundColor: isNextDisabled ? colors.surfaceVariant : colors.accentGreen },
-              isNextDisabled && { opacity: 0 }
+              isNextDisabled && { opacity: 0 },
             ]}
             onPress={handleNext}
             disabled={isNextDisabled}
@@ -343,12 +398,12 @@ export default function DASSFormScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Pop-up Konfirmasi Keluar ────────────────────────────── */}
+      {/* ── Modal Konfirmasi Keluar ─────────────────────────────── */}
       <Modal
         visible={exitModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setExitModalVisible(false)} // Menutup pop-up saat tombol back fisik ditekan lagi
+        onRequestClose={() => setExitModalVisible(false)}
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setExitModalVisible(false)}>
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
