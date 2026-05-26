@@ -43,6 +43,47 @@ const getMaxSeverity = (c1: string, c2: string, c3: string) => {
   return SEVERITY_LEVELS[maxIdx] || 'Normal';
 };
 
+const getWarningContent = (category: string) => {
+  switch (category) {
+    case 'Ringan':
+      return {
+        color: colors.accentBlue,
+        text: (
+          <>Hasil tes kamu menunjukkan kecenderungan <Text style={{ fontFamily: 'Fredoka_700Bold' }}>tingkat Ringan</Text>. Kamu mungkin sesekali merasakan ketidaknyamanan emosional dan itu hal yang sangat manusiawi.{'\n\n'}Cobalah perhatikan lebih apa yang tubuh dan pikiranmu butuhkan saat ini. Ceritakan perasaanmu pada orang yang kamu percaya, atau coba luangkan waktu untuk melakukan hal yang membuatmu tenang. Kamu tidak harus menanggung semuanya sendirian.</>
+        ),
+      };
+    case 'Sedang':
+      return {
+        color: colors.accentYellow,
+        text: (
+          <>Hasil tes kamu menunjukkan kecenderungan <Text style={{ fontFamily: 'Fredoka_700Bold' }}>tingkat Sedang</Text>. Mungkin belakangan ini ada hal-hal yang cukup berat kamu tanggung, dan itu terasa nyata.{'\n\n'}Perlu diingat bahwa mencari dukungan adalah tanda keberanian, bukan kelemahan. Pertimbangkan untuk berbicara dengan seseorang yang kamu percaya, atau mulai cari tahu layanan konseling yang mungkin bisa membantumu. Kamu layak mendapatkan ruang untuk merasa lebih baik.</>
+        ),
+      };
+    case 'Berat': // Sama dengan 'Parah'
+      return {
+        color: colors.accentRed,
+        text: (
+          <>Hasil tes kamu menunjukkan kecenderungan <Text style={{ fontFamily: 'Fredoka_700Bold' }}>tingkat Parah</Text>. Jika kamu merasa kondisi ini sudah mengganggu keseharian dan terasa sulit dikendalikan sendiri, kamu tidak perlu menghadapinya seorang diri.{'\n\n'}Kami sangat menyarankan kamu untuk mempertimbangkan berkonsultasi dengan profesional kesehatan jiwa  psikolog atau psikiater. Mereka hadir untuk membantumu, bukan untuk menghakimi. Langkah pertama memang sering terasa berat, tapi kamu sudah sangat berani hanya dengan mengenali perasaanmu hari ini.</>
+        ),
+      };
+    case 'Sangat Parah':
+      return {
+        color: colors.accentRed,
+        text: (
+          <>Hasil tes kamu menunjukkan kecenderungan <Text style={{ fontFamily: 'Fredoka_700Bold' }}>tingkat Sangat Parah</Text>. Kami ingin kamu tahu apa yang kamu rasakan itu valid, dan kamu tidak sendirian.{'\n\n'}Kondisi seperti ini membutuhkan perhatian dan dukungan yang lebih serius. Kami sangat menganjurkan kamu untuk segera menghubungi profesional kesehatan jiwa. Jika kamu merasa tidak aman atau dalam kondisi krisis saat ini, tolong hubungi orang terdekatmu atau layanan darurat yang tersedia. Kamu berharga, dan ada orang-orang yang peduli padamu.</>
+        ),
+      };
+    case 'Normal':
+    default:
+      return {
+        color: colors.accentGreen,
+        text: (
+          <>Hasil tes kamu menunjukkan bahwa kondisimu saat ini berada dalam <Text style={{ fontFamily: 'Fredoka_700Bold' }}>batas Normal</Text>. Kamu tampaknya sedang cukup baik-baik saja dan itu hal yang patut disyukuri.{'\n\n'}Teruslah jaga keseimbangan hidupmu: istirahat yang cukup, terhubung dengan orang-orang yang kamu percaya, dan lakukan hal-hal yang membuatmu merasa berarti. Setiap langkah kecil untuk merawat dirimu sendiri itu penting.</>
+        ),
+      };
+  }
+};
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function ScoreRow({
   label,
@@ -127,6 +168,7 @@ export default function DassHistoryScreen() {
 
   const totalScore = selectedData ? selectedData.depression_score + selectedData.anxiety_score + selectedData.stress_score : 0;
   const totalCategory = selectedData ? getMaxSeverity(selectedData.depression_category, selectedData.anxiety_category, selectedData.stress_category) : 'Normal';
+  const warningContent = getWarningContent(totalCategory);
 
   const displayDate = selectedData
     ? new Date(selectedData.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -258,12 +300,9 @@ export default function DassHistoryScreen() {
 
         {/* ── Warning Card ── */}
         {selectedData && (
-          <View style={styles.warningCard}>
-            <Text style={styles.warningText}>
-              {totalCategory === 'Normal'
-                ? 'Skor DASS-21 kamu secara umum berada dalam batas normal. Pertahankan terus gaya hidup positif dan kesehatan mentalmu!'
-                : `Hasil tes kamu menunjukkan kecenderungan tingkat "${totalCategory}". Jika kamu merasa kondisi ini mengganggu aktivitas sehari-hari, kamu dapat mempertimbangkan untuk berkonsultasi dengan profesional.`
-              }
+          <View style={[styles.warningCard, { backgroundColor: warningContent.color }]}>
+            <Text style={[styles.warningText, { textAlign: 'left' }]}>
+              {warningContent.text}
             </Text>
           </View>
         )}

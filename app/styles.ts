@@ -1500,6 +1500,62 @@ export const styles = StyleSheet.create({
   fontBold: {
     fontFamily: "Fredoka_700Bold",
   },
+
+  // DASS Result Specific
+  dassIntro: {
+    fontSize: 14,
+    fontFamily: "Fredoka_400Regular",
+    color: colors.inkSoft,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  consultBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#E6F1FB",
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: "#85B7EB",
+    padding: 14,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  consultText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#185FA5",
+    fontFamily: "Fredoka_400Regular",
+  },
+  dimensionResultCard: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 16,
+    marginBottom: 12,
+  },
+  dimensionLabel: {
+    fontSize: 13,
+    fontFamily: "Fredoka_500Medium",
+    color: "#5F5E5A",
+    marginBottom: 8,
+  },
+  dimensionBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  dimensionBadgeText: {
+    fontSize: 11,
+    fontFamily: "Fredoka_600SemiBold",
+    color: colors.white,
+  },
+  dimensionMessage: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: "Fredoka_400Regular",
+  },
 });
 
 export default styles;
