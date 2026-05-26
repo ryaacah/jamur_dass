@@ -1,8 +1,9 @@
 import {
+  Fredoka_300Light,
   Fredoka_400Regular,
   Fredoka_500Medium,
   Fredoka_600SemiBold,
-  Fredoka_700Bold
+  Fredoka_700Bold,
 } from '@expo-google-fonts/fredoka';
 import { useFonts } from 'expo-font';
 import { Stack } from "expo-router";
@@ -15,6 +16,7 @@ ExpoSplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
   const [fontsLoaded, fontError] = useFonts({
+    Fredoka_300Light,
     Fredoka_400Regular,
     Fredoka_500Medium,
     Fredoka_600SemiBold,
