@@ -283,7 +283,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     if (upsertError) throw upsertError;
 
     setModalVisible(false);
-    Alert.alert('Sukses', 'Profil berhasil disimpan!');
   } catch (error: any) {
     console.error('Gagal menyimpan profil:', error);
     Alert.alert('Kesalahan', error.message || 'Gagal menyimpan perubahan');
@@ -420,7 +419,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
                   <Text style={localStyles.profilText}>{sessionEmail}</Text>
                 ) : (
                   <TouchableOpacity onPress={() => router.push('/b-login')} activeOpacity={0.7}>
-                    <Text style={[localStyles.profilText, { color: colors.accentBlue, fontWeight: '700' }]}>Masuk akun</Text>
+                    <Text style={[localStyles.profilText, { color: colors.accentBlue, fontFamily: 'Fredoka_700Bold' }]}>Masuk akun</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -523,16 +522,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
             accessibilityLabel="Keluar dari akun"
           >
             <Text style={[localStyles.akunButtonText, { color: colors.ink }]}>Keluar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onDeleteData}
-            style={[localStyles.akunButton, { backgroundColor: colors.surfaceMuted, borderWidth: 0, elevation: 0 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Hapus data akun"
-          >
-            <Text style={[localStyles.akunButtonText, { color: colors.inkSoft }]}>Hapus data akun</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -703,21 +692,21 @@ const localStyles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   chip: { borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.surfaceCard },
   chipSelected: { backgroundColor: colors.primaryContainer, borderColor: colors.ink },
-  chipText: { fontSize: 14, color: colors.inkSoft, fontWeight: '500' },
-  chipSelectedText: { color: colors.onPrimaryContainer, fontWeight: '700' },
+  chipText: { fontSize: 14, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
+  chipSelectedText: { color: colors.onPrimaryContainer, fontFamily: 'Fredoka_700Bold' },
   timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, alignItems: 'center' },
   timeChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.surfaceCard },
-  timeChipText: { fontSize: 16, fontWeight: '600', color: colors.ink },
+  timeChipText: { fontSize: 16, fontFamily: 'Fredoka_600SemiBold', color: colors.ink },
   addButton: { borderWidth: 1, borderColor: colors.ink, borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: colors.secondaryFixed, alignItems: 'center', justifyContent: 'center' },
   notifikasiCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionCard: { marginBottom: 12 },
   akunCard: { marginBottom: 16 },
   profilDetails: { gap: 12 },
   profilRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  profilText: { fontSize: 18, color: colors.inkSoft, fontWeight: '500' },
+  profilText: { fontSize: 18, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
   logoutContainer: { marginTop: 16, marginBottom: 32, gap: 12 },
   akunButton: { width: '100%', height: 48, borderRadius: 12, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  akunButtonText: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  akunButtonText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
   disabledSection: { opacity: 0.5 },
   editProfileBtn: { position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentYellow, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 },
 
@@ -733,7 +722,7 @@ const localStyles = StyleSheet.create({
   tpAmPmCol: { borderWidth: 2, borderColor: colors.ink, borderRadius: 12, overflow: 'hidden' },
   tpAmPmBtn: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surfaceCard },
   tpAmPmBtnActive: { backgroundColor: colors.tertiaryContainer },
-  tpAmPmText: { fontSize: 16, fontWeight: '700', color: colors.inkSoft, textAlign: 'center' },
+  tpAmPmText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft, textAlign: 'center' },
   tpAmPmTextActive: { color: colors.ink },
   tpAmPmDivider: { height: 2, backgroundColor: colors.ink },
   
@@ -749,9 +738,9 @@ const localStyles = StyleSheet.create({
   
   tpFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
   tpBtnCancel: { paddingHorizontal: 16, paddingVertical: 8 },
-  tpBtnCancelText: { fontSize: 16, fontWeight: '700', color: colors.inkSoft },
+  tpBtnCancelText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft },
   tpBtnOk: { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.accentGreen, borderRadius: 12, borderWidth: 2, borderColor: colors.ink },
-  tpBtnOkText: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  tpBtnOkText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
 
   // ── Custom Notification Switch Styles ──
   switchTrack: { width: 80, height: 44, borderRadius: 22, justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },

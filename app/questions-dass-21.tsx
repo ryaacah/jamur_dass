@@ -59,10 +59,7 @@ const SUBSCALE_INDICES = {
 } as const;
 
 // ─── List Pertanyaan ──────────────────────────────────────────────────────────
-//
-// Urutan sesuai formulir DASS-21 asli (item 1–21).
-// Terjemahan sudah disesuaikan dengan makna asli Bahasa Inggris.
-//
+
 const DASS_QUESTIONS: string[] = [
   /* 01 – Stres     */ "Saya merasa sulit untuk menenangkan diri",
   /* 02 – Kecemasan */ "Saya merasa rongga mulut saya kering",
@@ -121,13 +118,6 @@ const ANSWER_OPTIONS: AnswerOption[] = [
 
 // ─── Logika Perhitungan Skor ──────────────────────────────────────────────────
 
-/**
- * Menjumlahkan skor mentah dari 7 item subskala,
- * lalu dikalikan 2 agar setara dengan norma DASS-42.
- *
- * Rumus: skor_subskala = (Σ 7 item) × 2
- * Range hasil: 0 – 42
- */
 function calculateSubscaleScore(
   answers: Record<number, AnswerValue>,
   indices: readonly number[],
@@ -136,21 +126,6 @@ function calculateSubscaleScore(
   return rawSum * 2;
 }
 
-/**
- * Menentukan kategori keparahan berdasarkan skor yang sudah dikali 2.
- * Menggunakan cut-off standar Lovibond (1995).
- *
- * Tabel cut-off (skor × 2):
- * ┌──────────────┬──────────┬───────────┬────────┐
- * │ Kategori     │ Depresi  │ Kecemasan │ Stres  │
- * ├──────────────┼──────────┼───────────┼────────┤
- * │ Normal       │  0 –  9  │   0 –  7  │  0–14  │
- * │ Ringan       │ 10 – 13  │   8 –  9  │ 15–18  │
- * │ Sedang       │ 14 – 20  │  10 – 14  │ 19–25  │
- * │ Berat        │ 21 – 27  │  15 – 19  │ 26–33  │
- * │ Sangat Parah │   28+    │    20+    │  34+   │
- * └──────────────┴──────────┴───────────┴────────┘
- */
 function getSeverityCategory(
   score: number,
   type: 'depression' | 'anxiety' | 'stress',
@@ -206,10 +181,12 @@ function QuestionCard({ text }: { text: string }) {
 function OptionButton({
   option,
   isSelected,
+  isAnySelected,
   onPress,
 }: {
   option:     AnswerOption;
   isSelected: boolean;
+  isAnySelected: boolean;
   onPress:    () => void;
 }) {
   return (
@@ -220,6 +197,7 @@ function OptionButton({
         styles.optionButton,
         (styles as any)[option.colorStyle],
         isSelected && styles.optionSelected,
+        (isAnySelected && !isSelected) && { opacity: 0.4 },
       ]}
       accessibilityRole="radio"
       accessibilityState={{ selected: isSelected }}
@@ -248,6 +226,8 @@ export default function DASSFormScreen() {
   const [currentIndex, setCurrentIndex]       = useState(0);
   const [answers, setAnswers]                 = useState<Record<number, AnswerValue>>({});
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting]       = useState(false);
 
   useEffect(() => {
     const onBackPress = () => {
@@ -271,8 +251,14 @@ export default function DASSFormScreen() {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex((prev) => prev + 1);
       return;
+    } else {
+      setConfirmModalVisible(true);
     }
+  };
 
+  const processResults = async () => {
+    setIsSubmitting(true);
+    
     // ── Semua pertanyaan selesai: hitung skor ──────────────────────────────
 
     // 1. Jumlahkan skor tiap subskala lalu kalikan 2 (konversi ke skala DASS-42)
@@ -310,9 +296,11 @@ export default function DASSFormScreen() {
       }
     } catch (err) {
       console.error('Error saving DASS results:', err);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmModalVisible(false);
+      router.replace('./dass-history');
     }
-
-    router.replace('./dass-history');
   };
 
   const handlePrev = () => {
@@ -359,6 +347,7 @@ export default function DASSFormScreen() {
               key={option.value}
               option={option}
               isSelected={answers[currentIndex] === option.value}
+              isAnySelected={!isNextDisabled}
               onPress={() => handleAnswer(option.value)}
             />
           ))}
@@ -376,7 +365,7 @@ export default function DASSFormScreen() {
             disabled={currentIndex === 0}
             activeOpacity={0.8}
           >
-            <Text style={[styles.primaryButtonText, { color: colors.ink, fontWeight: '700' }]}>
+            <Text style={[styles.primaryButtonText, { color: colors.ink, fontFamily: 'Fredoka_700Bold' }]}>
               Sebelumnya
             </Text>
           </TouchableOpacity>
@@ -385,13 +374,12 @@ export default function DASSFormScreen() {
             style={[
               styles.primaryButton,
               { flex: 1, backgroundColor: isNextDisabled ? colors.surfaceVariant : colors.accentGreen },
-              isNextDisabled && { opacity: 0 },
             ]}
             onPress={handleNext}
             disabled={isNextDisabled}
             activeOpacity={0.8}
           >
-            <Text style={[styles.primaryButtonText, { color: isNextDisabled ? colors.inkSoft : colors.ink, fontWeight: '700' }]}>
+            <Text style={[styles.primaryButtonText, { color: isNextDisabled ? colors.inkSoft : colors.ink, fontFamily: 'Fredoka_700Bold' }]}>
               {currentIndex === totalQuestions - 1 ? 'Selesai' : 'Selanjutnya'}
             </Text>
           </TouchableOpacity>
@@ -430,6 +418,47 @@ export default function DASSFormScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.modalBtnText}>Keluar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* ── Modal Konfirmasi Selesai ─────────────────────────────── */}
+      <Modal
+        visible={confirmModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmModalVisible(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setConfirmModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <View style={styles.modalTextGroup}>
+              <Text style={styles.modalTitle}>Sudah Yakin?</Text>
+              <Text style={styles.modalBody}>
+                Pastikan semua jawabanmu sudah sesuai dengan apa yang kamu rasakan akhir-akhir ini.
+              </Text>
+              <Text style={styles.modalConfirm}>Lanjut lihat hasil?</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtnContinue, { backgroundColor: colors.surfaceVariant }]}
+                onPress={() => setConfirmModalVisible(false)}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text style={[styles.modalBtnText, { color: colors.ink }]}>Cek Lagi</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtnExit, { backgroundColor: colors.accentGreen }]}
+                onPress={processResults}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text style={[styles.modalBtnText, { color: colors.ink }]}>
+                  {isSubmitting ? 'Menghitung...' : 'Ya, Selesai'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

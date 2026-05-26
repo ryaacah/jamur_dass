@@ -1,16 +1,16 @@
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { colors, styles } from "./styles";
 
@@ -64,7 +64,7 @@ export default function MoodDateScreen() {
               },
               text: {
                 color: colors.ink,
-                fontWeight: "bold",
+                fontFamily: "Fredoka_700Bold",
               },
             },
           };
@@ -78,7 +78,7 @@ export default function MoodDateScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -107,9 +107,9 @@ export default function MoodDateScreen() {
               textDisabledColor: colors.surfaceVariant,
               monthTextColor: colors.ink,
               arrowColor: colors.ink,
-              textDayFontWeight: "500",
-              textMonthFontWeight: "bold",
-              textDayHeaderFontWeight: "600",
+              textDayFontFamily: "Fredoka_500Medium",
+              textMonthFontFamily: "Fredoka_700Bold",
+              textDayHeaderFontFamily: "Fredoka_600SemiBold",
             }}
           />
         </View>
@@ -140,9 +140,9 @@ const localStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDefault,
   },
-  legendTitle: { fontSize: 16, fontWeight: "bold", color: colors.ink, marginBottom: 12 },
+  legendTitle: { fontSize: 16, fontFamily: "Fredoka_700Bold", color: colors.ink, marginBottom: 12 },
   legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   legendItem: { flexDirection: "row", alignItems: "center", width: "45%" },
   legendColor: { width: 16, height: 16, borderRadius: 4, marginRight: 8 },
-  legendLabel: { fontSize: 14, color: colors.inkSoft, textTransform: "capitalize" },
+  legendLabel: { fontSize: 14, color: colors.inkSoft, textTransform: "capitalize", fontFamily: "Fredoka_400Regular" },
 });

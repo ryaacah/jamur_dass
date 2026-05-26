@@ -57,7 +57,7 @@ function MotivationCard() {
 
   return (
     <View style={[styles.card, { backgroundColor: colors.accentCream, padding: 20, paddingBottom: 36, position: "relative", overflow: "hidden" }]}>
-      <Text style={[styles.cardBody, { fontStyle: "italic", color: colors.ink, lineHeight: 22, zIndex: 2, position: "relative", paddingRight: 16 }]}>
+      <Text style={[styles.cardBody, { fontSize: 16, fontStyle: "italic", color: colors.ink, lineHeight: 24, zIndex: 2, position: "relative", paddingRight: 16 }]}>
         {`"${quote}"`}
       </Text>
       <Image
@@ -157,14 +157,14 @@ function DassChart({ latestDass }: { latestDass: any }) {
   return (
     <View style={StyleSheet.flatten([styles.mutableCard, styles.chartCard])}>
       <Text style={styles.cardTitle}>Riwayat Skor DASS-21</Text>
-      <VictoryChart width={chartWidth} height={220} domainPadding={{ x: 40 }} padding={{ top: 20, bottom: 40, left: 56, right: 40 }} domain={{ y: [0, 42] }}>
-        <VictoryAxis dependentAxis tickValues={[0, 14, 28, 42]} tickFormat={(t: number) => { if (t === 0) return "Normal"; if (t === 14) return "Ringan"; if (t === 28) return "Sedang"; if (t === 42) return "Tinggi"; return ""; }} style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 10, fill: colors.ink, fontFamily: "System" }, grid: { stroke: "#E8E0D0", strokeWidth: 0.5, strokeDasharray: "4,4" } }} />
-        <VictoryAxis style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: "System" }, grid: { stroke: "transparent" } }} />
-        <VictoryBar data={chartData} cornerRadius={{ top: 6 }} labels={({ datum }) => (datum.y > 0 ? datum.y : "")} style={{ data: { fill: ({ datum }: any) => BAR_COLORS[datum?.x] ?? "#C4B49A", width: 32 }, labels: { fill: colors.ink, fontSize: 11, fontWeight: "bold" } }} />
+      <VictoryChart width={chartWidth} height={220} domainPadding={{ x: 40 }} padding={{ top: 20, bottom: 40, left: 64, right: 40 }} domain={{ y: [0, 42] }}>
+        <VictoryAxis dependentAxis tickValues={[0, 14, 28, 42]} tickFormat={(t: number) => { if (t === 0) return "Normal"; if (t === 14) return "Ringan"; if (t === 28) return "Sedang"; if (t === 42) return "Tinggi"; return ""; }} style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 12, fill: colors.ink, fontFamily: "Fredoka_500Medium" }, grid: { stroke: "#E8E0D0", strokeWidth: 0.5, strokeDasharray: "4,4" } }} />
+        <VictoryAxis style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 13, fill: colors.ink, fontFamily: "Fredoka_500Medium" }, grid: { stroke: "transparent" } }} />
+        <VictoryBar data={chartData} cornerRadius={{ top: 6 }} labels={({ datum }) => (datum.y > 0 ? datum.y : "")} style={{ data: { fill: ({ datum }: any) => BAR_COLORS[datum?.x] ?? "#C4B49A", width: 32 }, labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold" } }} />
       </VictoryChart>
 
       {!latestDass ? (
-        <Text style={{ textAlign: 'center', color: colors.inkSoft, marginTop: 4, marginBottom: 16 }}>Belum ada riwayat tes.</Text>
+        <Text style={{ textAlign: 'center', color: colors.inkSoft, marginTop: 4, marginBottom: 16, fontSize: 20, fontFamily: 'Fredoka_700Bold' }}>Belum ada riwayat tes.</Text>
       ) : (
         <View style={{ height: 16 }} />
       )}
@@ -398,7 +398,7 @@ export default function Index() {
       <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { flex: 1, marginRight: 8 }]} numberOfLines={1} adjustsFontSizeToFit>
+        <Text style={[styles.headerTitle, { flex: 1, marginRight: 8, fontSize: 24, textAlign: 'left' }]} numberOfLines={1} adjustsFontSizeToFit>
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
         </Text>
         <Link href="./settings-notification" asChild>

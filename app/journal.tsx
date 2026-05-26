@@ -309,7 +309,7 @@ export default function JournalScreen() {
                 borderRadius: 8,
                 elevation: 2,
               },
-              text: { color: colors.ink, fontWeight: "bold" },
+              text: { color: colors.ink, fontFamily: "Fredoka_700Bold" },
             },
           };
         });
@@ -467,9 +467,9 @@ export default function JournalScreen() {
                     textDisabledColor: colors.surfaceVariant,
                     monthTextColor: colors.ink,
                     arrowColor: colors.ink,
-                    textDayFontWeight: "500",
-                    textMonthFontWeight: "bold",
-                    textDayHeaderFontWeight: "600",
+                    textDayFontFamily: "Fredoka_500Medium",
+                    textMonthFontFamily: "Fredoka_700Bold",
+                    textDayHeaderFontFamily: "Fredoka_600SemiBold",
                   }}
                 />
               </View>
@@ -487,7 +487,7 @@ export default function JournalScreen() {
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "bold",
+                    fontFamily: "Fredoka_700Bold",
                     color: colors.ink,
                     marginBottom: 8,
                   }}
@@ -518,6 +518,7 @@ export default function JournalScreen() {
                           fontSize: 13,
                           color: colors.inkSoft,
                           textTransform: "capitalize",
+                        fontFamily: "Fredoka_400Regular",
                         }}
                       >
                         {mood}

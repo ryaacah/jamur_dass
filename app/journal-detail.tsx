@@ -2,20 +2,20 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
 import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
@@ -60,8 +60,8 @@ function MoodDisplay({ mood, date }: { mood: string | null; date: string }) {
     }}>
       <View style={{ flex: 1, justifyContent: 'center', paddingRight: 8 }}>
         <Text style={{ lineHeight: 32 }}>
-          <Text style={{ fontSize: 18, color: colors.inkSoft, fontWeight: '600' }}>{textPrefix}</Text>
-          <Text style={{ fontSize: 24, color: colors.ink, fontWeight: 'bold' }}>sedang {config.label}</Text>
+          <Text style={{ fontSize: 18, color: colors.inkSoft, fontFamily: 'Fredoka_600SemiBold' }}>{textPrefix}</Text>
+          <Text style={{ fontSize: 24, color: colors.ink, fontFamily: 'Fredoka_700Bold' }}>sedang {config.label}</Text>
         </Text>
       </View>
       <Image
@@ -172,16 +172,13 @@ export default function JournalDetailScreen() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
         {/* Top App Bar */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerBackBtn}
+            activeOpacity={0.7}
             onPress={() => router.back()}
             accessibilityLabel="Kembali"
           >
@@ -192,7 +189,10 @@ export default function JournalDetailScreen() {
           </Text>
           <View style={styles.headerSpacer} />
         </View>
-
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
         {/* Scrollable Content */}
         <ScrollView
           style={styles.wrapper}
@@ -211,7 +211,7 @@ export default function JournalDetailScreen() {
             styles.journalCard,
             isEditing && { borderColor: colors.primary, borderWidth: 2 },
           ]}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.ink, marginBottom: 12 }}>
+            <Text style={{ fontSize: 18, fontFamily: 'Fredoka_700Bold', color: colors.ink, marginBottom: 12 }}>
               {displayDate}
             </Text>
 

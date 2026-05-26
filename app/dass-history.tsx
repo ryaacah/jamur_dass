@@ -107,8 +107,8 @@ export default function DassHistoryScreen() {
 
         if (data && data.length > 0) {
           setHistoryList(data);
-          // Tetap gunakan data yang sedang dipilih, atau gunakan yang terbaru jika pertama kali muat
-          setSelectedData((prev: any) => prev ? (data.find((d: any) => d.id === prev.id) || data[0]) : data[0]);
+          // Selalu reset ke data terbaru ketika pertama kali masuk ke layar ini
+          setSelectedData(data[0]);
         }
       };
       fetchHistory();
@@ -183,7 +183,7 @@ export default function DassHistoryScreen() {
             width={chartWidth}
             height={220}
             domainPadding={{ x: 40 }}
-            padding={{ top: 20, bottom: 40, left: 56, right: 40 }}
+            padding={{ top: 20, bottom: 40, left: 64, right: 40 }}
             domain={{ y: [0, 42] }}
           >
             {/* Y-Axis */}
@@ -199,7 +199,7 @@ export default function DassHistoryScreen() {
               }}
               style={{
                 axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
-                tickLabels: { fontSize: 10, fill: colors.ink, fontFamily: 'System' },
+                tickLabels: { fontSize: 12, fill: colors.ink, fontFamily: 'Fredoka_500Medium' },
                 grid: { stroke: '#E8E0D0', strokeWidth: 0.5, strokeDasharray: '4,4' },
               }}
             />
@@ -208,7 +208,7 @@ export default function DassHistoryScreen() {
             <VictoryAxis
               style={{
                 axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
-                tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: 'System' },
+                tickLabels: { fontSize: 13, fill: colors.ink, fontFamily: 'Fredoka_500Medium' },
                 grid: { stroke: 'transparent' },
               }}
             />
@@ -224,7 +224,7 @@ export default function DassHistoryScreen() {
                     BAR_COLORS[datum?.x] ?? '#C4B49A',
                   width: 32,
                 },
-                labels: { fill: colors.ink, fontSize: 11, fontWeight: "bold" },
+                labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold" },
               }}
             />
           </VictoryChart>
@@ -309,8 +309,8 @@ export default function DassHistoryScreen() {
                       setHistoryModalVisible(false);
                     }}
                   >
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: colors.ink }}>{histDate}</Text>
-                    <Text style={{ fontSize: 16, color: colors.inkSoft }}>Skor: {hTotal} ({hCat})</Text>
+                    <Text style={{ fontSize: 16, fontFamily: 'Fredoka_600SemiBold', color: colors.ink }}>{histDate}</Text>
+                    <Text style={{ fontSize: 16, fontFamily: 'Fredoka_400Regular', color: colors.inkSoft }}>Skor: {hTotal} ({hCat})</Text>
                   </TouchableOpacity>
                 );
               })}

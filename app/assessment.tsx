@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "./styles";
 
 // ─── Local Assets ─────────────────────────────────────────────────────────────
-const MASCOT_IMAGE = require("../assets/images/splash_icon.png");
+const MASCOT_IMAGE = require("../assets/images/mur-jur.png");
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ function Header({ onBack }: { onBack?: () => void }) {
       >
         <Icon name="arrow-back" size={24} color={colors.ink} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Self Assessment</Text>
+      <Text style={[styles.headerTitle, styles.headerTitleNormal]}>Self Assessment</Text>
       <View style={styles.headerSpacer} />
     </View>
   );
@@ -44,30 +44,6 @@ function MascotSection() {
           contentFit="contain"
           accessibilityLabel="Spirit Mushroom mascot"
         />
-        {/* Speech bubble */}
-        <View style={styles.speechBubble}>
-          <Text style={styles.speechBubbleText}>Kamu bisa!</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function BentoMetaGrid() {
-  return (
-    <View style={styles.bentoGrid}>
-      {/* 21 Soal */}
-      <View style={[styles.assesmenBentoCell, styles.bentoCellTertiary]}>
-        {/* <Text style={styles.bentoIcon}>❓</Text> */}
-        <Text style={styles.bentoValueTertiary}>21 Soal</Text>
-        <Text style={styles.bentoLabelTertiary}>Singkat & Padat</Text>
-      </View>
-
-      {/* Privasi */}
-      <View style={[styles.assesmenBentoCell, styles.bentoCellSecondary]}>
-        {/* <Text style={styles.bentoIcon}>🛡️</Text> */}
-        <Text style={styles.bentoValueSecondary}>Privasi</Text>
-        <Text style={styles.bentoLabelSecondary}>100% Aman</Text>
       </View>
     </View>
   );
@@ -78,10 +54,10 @@ function InstructionCard() {
     <View style={styles.instructionCard}>
       {/* Title block */}
       <View style={styles.titleBlock}>
-        <Text style={styles.displayTitle}>DASS-21</Text>
+        <Text style={[styles.displayTitle, styles.fontBold]}>DASS-21</Text>
         <View style={styles.timeRow}>
           <Text style={styles.timeIcon}>⏱</Text>
-          <Text style={styles.timeText}>Estimasi pengerjaan: ~3 menit</Text>
+          <Text style={[styles.timeText, styles.fontRegular]}>Estimasi pengerjaan: ~3 menit</Text>
         </View>
       </View>
 
@@ -90,35 +66,19 @@ function InstructionCard() {
 
       {/* Description */}
       <View style={styles.descBlock}>
-        <Text style={styles.descText}>
-          Kuesioner ini terdiri dari 21 pertanyaan singkat yang dirancang untuk
-          membantumu mengukur tingkat{" "}
-          <Text style={styles.descTextBold}>depresi, kecemasan,</Text> dan{" "}
-          <Text style={styles.descTextBold}>stres</Text> yang mungkin kamu
-          rasakan.
+        <Text style={[styles.descText, styles.fontRegular]}>
+          Tes ini terdiri dari 21 pertanyaan yang dirancang untuk mengukur tingkat{" "}
+          <Text style={[styles.descTextBold, styles.fontBold]}>Depresi, Kecemasan, dan Stres</Text>{" "}
+          yang mungkin kamu rasakan.
         </Text>
-
-        {/* Instruction box */}
-        <View style={styles.instructionBox}>
-          <Text style={styles.instructionBoxTitle}>Petunjuk Pengerjaan:</Text>
-          <Text style={styles.instructionBoxText}>
-            Pilihlah jawaban yang paling menggambarkan perasaanmu selama{" "}
-            <Text style={{ fontWeight: "700" }}>seminggu terakhir</Text>.{" "}
-            Tidak ada jawaban benar atau salah, cukup pilih yang paling jujur
-            menurut hatimu.
-          </Text>
-        </View>
       </View>
-
-      {/* Bento meta */}
-      <BentoMetaGrid />
     </View>
   );
 }
 
 function Tagline() {
   return (
-    <Text style={styles.taglineAssesmen}>
+    <Text style={[styles.taglineAssesmen, styles.fontRegular, { fontStyle: "italic" }]}>
       {'"Ambil napas dalam-dalam sebelum memulai..."'}
     </Text>
   );
@@ -132,7 +92,7 @@ function Footer() {
           style={styles.startBtn}
           activeOpacity={0.85}
         >
-          <Text style={styles.startBtnText}>Mulai Sekarang</Text>
+          <Text style={[styles.startBtnText, styles.fontBold]}>Mulai Sekarang</Text>
           <Text style={styles.startBtnIcon}>›</Text>
         </TouchableOpacity>
       </Link>

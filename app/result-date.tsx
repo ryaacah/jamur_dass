@@ -89,7 +89,7 @@ export default function TanggalHasilModal() {
                   style={[
                     styles.calendarDateText,
                     item.isMuted && { color: colors.inkSoft, opacity: 0.5 },
-                    item.isToday && { fontWeight: '700' }
+                  item.isToday && { fontFamily: 'Fredoka_700Bold' }
                   ]}
                 >
                   {item.day}
