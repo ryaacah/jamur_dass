@@ -401,11 +401,13 @@ export default function Index() {
         <Text style={[styles.headerTitle, { flex: 1, marginRight: 8, fontSize: 24, textAlign: 'left' }]} numberOfLines={1} adjustsFontSizeToFit>
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
         </Text>
-        <Link href="./settings-notification" asChild>
-          <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
-            <Icon name="settings" size={26} color={colors.ink} />
-          </TouchableOpacity>
-        </Link>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Link href="./settings-notification" asChild>
+            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
+              <Icon name="settings" size={26} color={colors.ink} />
+            </TouchableOpacity>
+          </Link>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

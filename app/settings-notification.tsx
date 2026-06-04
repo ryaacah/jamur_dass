@@ -11,7 +11,6 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -92,8 +91,8 @@ function MushroomToggle({ value, onToggle }: { value: boolean; onToggle: () => v
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onToggle}>
-      <View style={[localStyles.switchTrack, value ? localStyles.switchTrackOn : localStyles.switchTrackOff]}>
-        <Animated.View style={[localStyles.switchThumb, { transform: [{ translateX }] }]}>
+      <View style={[styles.switchTrack, value ? styles.switchTrackOn : styles.switchTrackOff]}>
+        <Animated.View style={[styles.switchThumb, { transform: [{ translateX }] }]}>
           <MushroomFace isOn={value} />
         </Animated.View>
       </View>
@@ -105,12 +104,12 @@ const DayChip: React.FC<DayChipProps> = ({ label, selected, onPress }) => (
   <TouchableOpacity
     activeOpacity={0.7}
     onPress={() => onPress(label)}
-    style={[localStyles.chip, selected && localStyles.chipSelected]}
+    style={[styles.chip, selected && styles.chipSelected]}
     accessibilityRole="checkbox"
     accessibilityState={{ checked: selected }}
     accessibilityLabel={label}
   >
-    <Text style={[localStyles.chipText, selected && localStyles.chipSelectedText]}>
+    <Text style={[styles.chipText, selected && styles.chipSelectedText]}>
       {label}
     </Text>
   </TouchableOpacity>
@@ -125,12 +124,12 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
   onAddTime,
   onRemoveTime,
 }) => (
-  <View style={[styles.card, localStyles.sectionCard]}>
+  <View style={[styles.card, styles.sectionCard]}>
     <Text style={styles.cardTitle}>{title}</Text>
 
     {/* Day chips */}
     {days && selectedDays && onToggleDay && (
-      <View style={localStyles.chipRow}>
+      <View style={styles.chipRow}>
         {days.map((day) => (
           <DayChip
             key={day}
@@ -143,16 +142,16 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
     )}
 
     {/* Time row */}
-    <View style={localStyles.timeRow}>
+    <View style={styles.settingsTimeRow}>
       {times.map((t, idx) => (
         <TouchableOpacity
           key={idx}
           activeOpacity={0.7}
-          style={localStyles.timeChip}
+          style={styles.timeChip}
           onPress={() => onRemoveTime(idx)}
           accessibilityRole="button"
         >
-          <Text style={localStyles.timeChipText}>{t}</Text>
+          <Text style={styles.timeChipText}>{t}</Text>
           <Icon name="close" size={16} color={colors.inkSoft} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       ))}
@@ -160,7 +159,7 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
       <TouchableOpacity
         activeOpacity={0.75}
         onPress={onAddTime}
-        style={localStyles.addButton}
+        style={styles.addButton}
         accessibilityRole="button"
         accessibilityLabel={`Tambah jadwal ${title}`}
       >
@@ -305,6 +304,21 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const [pickerAmPm, setPickerAmPm] = useState<'AM' | 'PM'>('AM');
   const [pickerMode, setPickerMode] = useState<'hour' | 'minute'>('hour');
 
+  // ── Animasi rotasi jarum jam yang lebih mulus ──────────────────────────────
+  const clockHandAnim = useRef(new Animated.Value(360)).current;
+
+  useEffect(() => {
+    if (isTimeModalVisible) {
+      const targetAngle = pickerMode === 'hour' ? pickerHour * 30 : pickerMinute * 6;
+      Animated.spring(clockHandAnim, {
+        toValue: targetAngle,
+        friction: 8,
+        tension: 50,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [pickerMode, isTimeModalVisible]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSaveTime = () => {
@@ -331,6 +345,9 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
     if (angle < 0) angle += 360;
 
+    // Melacak rotasi secara realtime mengikuti sentuhan jari
+    clockHandAnim.setValue(angle);
+
     if (pickerMode === 'hour') {
       let h = Math.round(angle / 30);
       if (h === 0) h = 12;
@@ -339,6 +356,17 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
       let m = Math.round(angle / 6) % 60;
       setPickerMinute(m);
     }
+  };
+
+  const handleClockRelease = () => {
+    // Efek snap yang mulus ke angka terdekat saat jari dilepas
+    const targetAngle = pickerMode === 'hour' ? pickerHour * 30 : pickerMinute * 6;
+    Animated.spring(clockHandAnim, {
+      toValue: targetAngle,
+      friction: 7,
+      tension: 50,
+      useNativeDriver: true,
+    }).start();
   };
 
   const toggleDay = (
@@ -401,25 +429,25 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Profil ──────────────────────────────────────────────────────── */}
-        <View style={[styles.card, localStyles.akunCard, { paddingRight: 64 }]}>
-          <View style={[localStyles.profilDetails, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+        <View style={[styles.card, styles.akunCard, { paddingRight: 64 }]}>
+          <View style={[styles.profilDetails, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
             <Image
               source={AVATARS.find((a) => a.id === avatar)?.source || AVATARS[0].source}
               style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surfaceVariant }}
               contentFit="cover"
             />
             <View style={{ flex: 1, gap: 12 }}>
-              <View style={localStyles.profilRow}>
+              <View style={styles.profilRow}>
                 <Icon name="person" size={20} color={colors.inkSoft} />
-                <Text style={localStyles.profilText}>{nickname || 'Belum diatur'}</Text>
+                <Text style={styles.profilText}>{nickname || 'Belum diatur'}</Text>
               </View>
-              <View style={localStyles.profilRow}>
+              <View style={styles.profilRow}>
                 <Icon name="email" size={20} color={colors.inkSoft} />
                 {sessionEmail ? (
-                  <Text style={localStyles.profilText}>{sessionEmail}</Text>
+                  <Text style={styles.profilText}>{sessionEmail}</Text>
                 ) : (
                   <TouchableOpacity onPress={() => router.push('/b-login')} activeOpacity={0.7}>
-                    <Text style={[localStyles.profilText, { color: colors.accentBlue, fontFamily: 'Fredoka_700Bold' }]}>Masuk akun</Text>
+                    <Text style={[styles.profilText, { color: colors.accentBlue, fontFamily: 'Fredoka_700Bold' }]}>Masuk akun</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -428,7 +456,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
 
           {/* Tombol Edit Profil di Kanan Bawah */}
           <TouchableOpacity
-            style={localStyles.editProfileBtn}
+            style={styles.editProfileBtn}
             onPress={() => {
               setTempName(nickname);
               setTempAvatar(avatar);
@@ -442,13 +470,13 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         </View>
 
         {/* ── Notifikasi ──────────────────────────────────────────────────── */}
-        <View style={[styles.card, localStyles.notifikasiCard]}>
+        <View style={[styles.card, styles.notifikasiCard]}>
           <Text style={styles.cardTitle}>Notifikasi</Text>
           <MushroomToggle value={notifEnabled} onToggle={() => setNotifEnabled(!notifEnabled)} />
         </View>
 
         <View
-          style={[!notifEnabled && localStyles.disabledSection]}
+          style={[!notifEnabled && styles.disabledSection]}
           pointerEvents={notifEnabled ? 'auto' : 'none'}
         >
           {/* ── Trak Mood ───────────────────────────────────────────────────── */}
@@ -461,6 +489,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               setPickerMinute(0);
               setPickerAmPm('AM');
               setPickerMode('hour');
+              clockHandAnim.setValue(360);
               setTimeModalVisible(true);
             }}
             onRemoveTime={(idx) => {
@@ -480,6 +509,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               setPickerMinute(0);
               setPickerAmPm('AM');
               setPickerMode('hour');
+              clockHandAnim.setValue(360);
               setTimeModalVisible(true);
             }}
             onRemoveTime={(idx) => {
@@ -502,6 +532,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               setPickerMinute(0);
               setPickerAmPm('AM');
               setPickerMode('hour');
+              clockHandAnim.setValue(360);
               setTimeModalVisible(true);
             }}
             onRemoveTime={(idx) => {
@@ -513,15 +544,15 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         </View>
 
         {/* ── Logout & Hapus Data ─────────────────────────────────────────── */}
-        <View style={localStyles.logoutContainer}>
+        <View style={styles.logoutContainer}>
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleLogout}
-            style={[localStyles.akunButton, { backgroundColor: colors.accentRed }]}
+            style={[styles.akunButton, { backgroundColor: colors.accentRed }]}
             accessibilityRole="button"
             accessibilityLabel="Keluar dari akun"
           >
-            <Text style={[localStyles.akunButtonText, { color: colors.ink }]}>Keluar</Text>
+            <Text style={[styles.akunButtonText, { color: colors.ink }]}>Keluar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -584,53 +615,54 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
       </Modal>
 
       {/* ── Custom Time Picker Modal (Ala image.png) ──────────────────────── */}
-      <Modal visible={isTimeModalVisible} transparent animationType="fade" onRequestClose={() => setTimeModalVisible(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setTimeModalVisible(false)}>
-          <View style={localStyles.tpCard} onStartShouldSetResponder={() => true}>
-            <Text style={localStyles.tpHeader}>PILIH WAKTU</Text>
+      <Modal visible={isTimeModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.tpCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.tpHeader}>PILIH WAKTU</Text>
 
             {/* ── Digital Display & AM/PM ── */}
-            <View style={localStyles.tpDigitalRow}>
+            <View style={styles.tpDigitalRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setPickerMode('hour')}
-                style={[localStyles.tpTimeBox, pickerMode === 'hour' ? localStyles.tpTimeBoxActive : localStyles.tpTimeBoxInactive]}
+                style={[styles.tpTimeBox, pickerMode === 'hour' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive]}
               >
-                <Text style={[localStyles.tpTimeText, pickerMode !== 'hour' && { color: colors.inkSoft }]}>
+                <Text style={[styles.tpTimeText, pickerMode !== 'hour' && { color: colors.inkSoft }]}>
                   {String(pickerHour).padStart(2, '0')}
                 </Text>
               </TouchableOpacity>
 
-              <Text style={localStyles.tpColon}>:</Text>
+              <Text style={styles.tpColon}>:</Text>
 
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setPickerMode('minute')}
-                style={[localStyles.tpTimeBox, pickerMode === 'minute' ? localStyles.tpTimeBoxActive : localStyles.tpTimeBoxInactive]}
+                style={[styles.tpTimeBox, pickerMode === 'minute' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive]}
               >
-                <Text style={[localStyles.tpTimeText, pickerMode !== 'minute' && { color: colors.inkSoft }]}>
+                <Text style={[styles.tpTimeText, pickerMode !== 'minute' && { color: colors.inkSoft }]}>
                   {String(pickerMinute).padStart(2, '0')}
                 </Text>
               </TouchableOpacity>
 
-              <View style={localStyles.tpAmPmCol}>
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('AM')} style={[localStyles.tpAmPmBtn, pickerAmPm === 'AM' && localStyles.tpAmPmBtnActive]}>
-                  <Text style={[localStyles.tpAmPmText, pickerAmPm === 'AM' && localStyles.tpAmPmTextActive]}>AM</Text>
+              <View style={styles.tpAmPmCol}>
+                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('AM')} style={[styles.tpAmPmBtn, pickerAmPm === 'AM' && styles.tpAmPmBtnActive]}>
+                  <Text style={[styles.tpAmPmText, pickerAmPm === 'AM' && styles.tpAmPmTextActive]}>AM</Text>
                 </TouchableOpacity>
-                <View style={localStyles.tpAmPmDivider} />
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('PM')} style={[localStyles.tpAmPmBtn, pickerAmPm === 'PM' && localStyles.tpAmPmBtnActive]}>
-                  <Text style={[localStyles.tpAmPmText, pickerAmPm === 'PM' && localStyles.tpAmPmTextActive]}>PM</Text>
+                <View style={styles.tpAmPmDivider} />
+                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('PM')} style={[styles.tpAmPmBtn, pickerAmPm === 'PM' && styles.tpAmPmBtnActive]}>
+                  <Text style={[styles.tpAmPmText, pickerAmPm === 'PM' && styles.tpAmPmTextActive]}>PM</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* ── Analog Clock Face ── */}
-            <View style={localStyles.tpClockContainer}>
+            <View style={styles.tpClockContainer}>
               <View
-                style={localStyles.tpClockFace}
+                style={styles.tpClockFace}
                 onStartShouldSetResponder={() => true}
                 onResponderGrant={handleClockTouch}
                 onResponderMove={handleClockTouch}
+                onResponderRelease={handleClockRelease}
               >
                 {/* Angka Jam / Menit */}
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => {
@@ -640,113 +672,61 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
                   const y = 120 - 15 - radius * Math.cos(angle);
                   const label = pickerMode === 'hour' ? h : (h === 12 ? '00' : h * 5);
                   return (
-                    <Text key={h} style={[localStyles.tpClockNumber, { left: x, top: y }]}>
+                    <Text key={h} style={[styles.tpClockNumber, { left: x, top: y }]}>
                       {label}
                     </Text>
                   );
                 })}
 
                 {/* Jarum Jam */}
-                <View
+                <Animated.View
                   style={[
-                    localStyles.tpClockHandWrapper,
-                    { transform: [{ rotate: `${pickerMode === 'hour' ? pickerHour * 30 : pickerMinute * 6}deg` }] },
+                    styles.tpClockHandWrapper,
+                    {
+                      transform: [
+                        {
+                          rotate: clockHandAnim.interpolate({
+                            inputRange: [0, 360],
+                            outputRange: ['0deg', '360deg'],
+                          }),
+                        },
+                      ],
+                    },
                   ]}
                   pointerEvents="none"
                 >
-                  <View style={localStyles.tpClockHandLine} />
-                  <View style={localStyles.tpClockHandCircle}>
-                    <Text style={localStyles.tpClockHandText}>
+                  <View style={styles.tpClockHandLine} />
+                  <View style={styles.tpClockHandCircle}>
+                    <Text style={styles.tpClockHandText}>
                       {pickerMode === 'hour' ? pickerHour : pickerMinute}
                     </Text>
                   </View>
-                  <View style={localStyles.tpClockHandDot} />
-                </View>
+                  <View style={styles.tpClockHandDot} />
+                </Animated.View>
               </View>
             </View>
 
             {/* ── Footer ── */}
-            <View style={localStyles.tpFooter}>
+            <View style={styles.tpFooter}>
               <TouchableOpacity
-                style={localStyles.tpBtnCancel}
+                style={styles.tpBtnCancel}
                 onPress={() => setTimeModalVisible(false)}
               >
-                <Text style={localStyles.tpBtnCancelText}>BATAL</Text>
+                <Text style={styles.tpBtnCancelText}>BATAL</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={localStyles.tpBtnOk}
+                style={styles.tpBtnOk}
                 onPress={handleSaveTime}
                 activeOpacity={0.8}
               >
-                <Text style={localStyles.tpBtnOkText}>OKE</Text>
+                <Text style={styles.tpBtnOkText}>OKE</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </SafeAreaView>
   );
 };
-
-const localStyles = StyleSheet.create({
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  chip: { borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.surfaceCard },
-  chipSelected: { backgroundColor: colors.primaryContainer, borderColor: colors.ink },
-  chipText: { fontSize: 14, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
-  chipSelectedText: { color: colors.onPrimaryContainer, fontFamily: 'Fredoka_700Bold' },
-  timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, alignItems: 'center' },
-  timeChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.surfaceCard },
-  timeChipText: { fontSize: 16, fontFamily: 'Fredoka_600SemiBold', color: colors.ink },
-  addButton: { borderWidth: 1, borderColor: colors.ink, borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: colors.secondaryFixed, alignItems: 'center', justifyContent: 'center' },
-  notifikasiCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionCard: { marginBottom: 12 },
-  akunCard: { marginBottom: 16 },
-  profilDetails: { gap: 12 },
-  profilRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  profilText: { fontSize: 18, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
-  logoutContainer: { marginTop: 16, marginBottom: 32, gap: 12 },
-  akunButton: { width: '100%', height: 48, borderRadius: 12, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  akunButtonText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
-  disabledSection: { opacity: 0.5 },
-  editProfileBtn: { position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentYellow, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 },
-
-  // ── Custom Time Picker Styles ──
-  tpCard: { backgroundColor: colors.surfaceCard, borderRadius: 32, padding: 24, width: '100%', maxWidth: 360, shadowColor: colors.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 },
-  tpHeader: { fontSize: 14, fontWeight: '700', color: colors.inkSoft, letterSpacing: 1.5, marginBottom: 24, fontFamily: 'Fredoka_700Bold' },
-  tpDigitalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 32 },
-  tpTimeBox: { width: 88, height: 80, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
-  tpTimeBoxActive: { backgroundColor: colors.tertiaryContainer, borderColor: colors.ink },
-  tpTimeBoxInactive: { backgroundColor: colors.surfaceVariant },
-  tpTimeText: { fontSize: 52, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
-  tpColon: { fontSize: 40, fontWeight: '700', color: colors.inkSoft, marginBottom: 8 },
-  tpAmPmCol: { borderWidth: 2, borderColor: colors.ink, borderRadius: 12, overflow: 'hidden' },
-  tpAmPmBtn: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surfaceCard },
-  tpAmPmBtnActive: { backgroundColor: colors.tertiaryContainer },
-  tpAmPmText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft, textAlign: 'center' },
-  tpAmPmTextActive: { color: colors.ink },
-  tpAmPmDivider: { height: 2, backgroundColor: colors.ink },
-  
-  tpClockContainer: { alignItems: 'center', marginBottom: 32 },
-  tpClockFace: { width: 240, height: 240, borderRadius: 120, backgroundColor: colors.surfaceVariant, alignItems: 'center', justifyContent: 'center' },
-  tpClockNumber: { position: 'absolute', width: 32, height: 32, textAlign: 'center', textAlignVertical: 'center', fontSize: 17, fontWeight: '600', color: colors.ink, fontFamily: 'Fredoka_600SemiBold' },
-  
-  tpClockHandWrapper: { position: 'absolute', width: 40, height: 240, alignItems: 'center' },
-  tpClockHandLine: { width: 2, height: 92, backgroundColor: colors.accentRed, marginTop: 28 }, // Garis menghubungkan jarum dengan titik pusat
-  tpClockHandCircle: { position: 'absolute', top: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentRed, alignItems: 'center', justifyContent: 'center' },
-  tpClockHandDot: { position: 'absolute', top: 116, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentRed },
-  tpClockHandText: { fontSize: 16, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
-  
-  tpFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
-  tpBtnCancel: { paddingHorizontal: 16, paddingVertical: 8 },
-  tpBtnCancelText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft },
-  tpBtnOk: { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.accentGreen, borderRadius: 12, borderWidth: 2, borderColor: colors.ink },
-  tpBtnOkText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
-
-  // ── Custom Notification Switch Styles ──
-  switchTrack: { width: 80, height: 44, borderRadius: 22, justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },
-  switchTrackOn: { backgroundColor: colors.accentGreen },
-  switchTrackOff: { backgroundColor: colors.surfaceVariant },
-  switchThumb: { position: 'absolute', left: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },
-});
 
 export default PengaturanScreen;

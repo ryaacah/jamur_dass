@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, StyleSheet, ViewStyle } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -111,21 +111,21 @@ export const typography = {
   buttonSm: { fontSize: 14, lineHeight: 20, fontFamily: 'Fredoka_600SemiBold' },
 };
 
-const cardShadow = {
+const cardShadow: ViewStyle = {
   shadowColor: colors.shadowColor,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.1,
   shadowRadius: 12,
   elevation: 4,
-} as const;
+};
 
-const smShadow = {
+const smShadow: ViewStyle = {
   shadowColor: colors.shadowColor,
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.08,
   shadowRadius: 6,
   elevation: 2,
-} as const;
+};
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 export const styles = StyleSheet.create({
@@ -503,6 +503,7 @@ export const styles = StyleSheet.create({
     height: 180,
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "center",
   },
   mascotImage: {
     width: "100%",
@@ -1556,6 +1557,66 @@ export const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: "Fredoka_400Regular",
   },
+
+  // Settings Notification specific
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  chip: { borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.surfaceCard },
+  chipSelected: { backgroundColor: colors.primaryContainer, borderColor: colors.ink },
+  chipText: { fontSize: 14, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
+  chipSelectedText: { color: colors.onPrimaryContainer, fontFamily: 'Fredoka_700Bold' },
+  settingsTimeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, alignItems: 'center' },
+  timeChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.borderDefault, borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.surfaceCard },
+  timeChipText: { fontSize: 16, fontFamily: 'Fredoka_600SemiBold', color: colors.ink },
+  addButton: { borderWidth: 1, borderColor: colors.ink, borderRadius: 9999, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: colors.secondaryFixed, alignItems: 'center', justifyContent: 'center' },
+  notifikasiCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionCard: { marginBottom: 12 },
+  akunCard: { marginBottom: 16 },
+  profilDetails: { gap: 12 },
+  profilRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  profilText: { fontSize: 18, color: colors.inkSoft, fontFamily: 'Fredoka_500Medium' },
+  logoutContainer: { marginTop: 16, marginBottom: 32, gap: 12 },
+  akunButton: { width: '100%', height: 48, borderRadius: 12, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  akunButtonText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
+  disabledSection: { opacity: 0.5 },
+  editProfileBtn: { position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentYellow, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 },
+
+  // Custom Time Picker Styles
+  tpCard: { backgroundColor: colors.surfaceCard, borderRadius: 32, padding: 24, width: '100%', maxWidth: 360, shadowColor: colors.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 },
+  tpHeader: { fontSize: 14, fontWeight: '700', color: colors.inkSoft, letterSpacing: 1.5, marginBottom: 24, fontFamily: 'Fredoka_700Bold' },
+  tpDigitalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 32 },
+  tpTimeBox: { width: 88, height: 80, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
+  tpTimeBoxActive: { backgroundColor: colors.tertiaryContainer, borderColor: colors.ink },
+  tpTimeBoxInactive: { backgroundColor: colors.surfaceVariant },
+  tpTimeText: { fontSize: 52, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
+  tpColon: { fontSize: 40, fontWeight: '700', color: colors.inkSoft, marginBottom: 8 },
+  tpAmPmCol: { borderWidth: 2, borderColor: colors.ink, borderRadius: 12, overflow: 'hidden' },
+  tpAmPmBtn: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surfaceCard },
+  tpAmPmBtnActive: { backgroundColor: colors.tertiaryContainer },
+  tpAmPmText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft, textAlign: 'center' },
+  tpAmPmTextActive: { color: colors.ink },
+  tpAmPmDivider: { height: 2, backgroundColor: colors.ink },
+  
+  tpClockContainer: { alignItems: 'center', marginBottom: 32 },
+  tpClockFace: { width: 240, height: 240, borderRadius: 120, backgroundColor: colors.surfaceVariant, alignItems: 'center', justifyContent: 'center' },
+  tpClockNumber: { position: 'absolute', width: 32, height: 32, textAlign: 'center', textAlignVertical: 'center', fontSize: 17, fontWeight: '600', color: colors.ink, fontFamily: 'Fredoka_600SemiBold' },
+  
+  tpClockHandWrapper: { position: 'absolute', width: 40, height: 240, alignItems: 'center' },
+  tpClockHandLine: { width: 2, height: 92, backgroundColor: colors.accentRed, marginTop: 28 },
+  tpClockHandCircle: { position: 'absolute', top: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentRed, alignItems: 'center', justifyContent: 'center' },
+  tpClockHandDot: { position: 'absolute', top: 116, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentRed },
+  tpClockHandText: { fontSize: 16, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
+  
+  tpFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
+  tpBtnCancel: { paddingHorizontal: 16, paddingVertical: 8 },
+  tpBtnCancelText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft },
+  tpBtnOk: { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.accentGreen, borderRadius: 12, borderWidth: 2, borderColor: colors.ink },
+  tpBtnOkText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
+
+  // Custom Notification Switch Styles
+  switchTrack: { width: 80, height: 44, borderRadius: 22, justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },
+  switchTrackOn: { backgroundColor: colors.accentGreen },
+  switchTrackOff: { backgroundColor: colors.surfaceVariant },
+  switchThumb: { position: 'absolute', left: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },
 });
 
 export default styles;

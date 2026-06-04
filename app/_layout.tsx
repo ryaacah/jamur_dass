@@ -9,7 +9,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from "expo-router";
 import * as ExpoSplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
 import SplashScreen from "./splash-screen";
+import { addNotificationToInbox, NotificationType } from "../lib/notifications";
 
 ExpoSplashScreen.preventAutoHideAsync();
 
@@ -24,21 +26,47 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Listener untuk notifikasi yang masuk ketika aplikasi sedang berjalan (foreground)
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      const { title, body, data } = notification.request.content;
+      
+      const now = new Date();
+      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      addNotificationToInbox({
+        type: (data?.type as NotificationType) || 'mood',
+        title: title || 'Notifikasi',
+        body: body || '',
+        time: `Hari ini, ${timeString}`,
+      });
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
     if (fontError) throw fontError;
 
-    // Tunggu sampai font selesai dimuat sebelum menjalankan timer splash screen
+    // Tunggu sampai font selesai dimuat sebelum merender custom splash screen
     if (fontsLoaded) {
+      // Sembunyikan native splash screen agar custom splash screen terlihat
+      ExpoSplashScreen.hideAsync();
+
       const timer = setTimeout(() => {
         setShowSplash(false);
-        ExpoSplashScreen.hideAsync();
       }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [fontsLoaded, fontError]);
 
-  // Tampilkan splash screen selama showSplash bernilai true atau font belum dimuat
-  if (showSplash || !fontsLoaded) {
+  // Jika font belum dimuat, return null (native splash screen akan tetap tampil)
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  // Setelah font dimuat, tampilkan custom splash screen selama showSplash bernilai true
+  if (showSplash) {
     return <SplashScreen />;
   }
 

@@ -201,6 +201,14 @@ export default function LoginScreen() {
             />
           </View>
 
+          <View style={{ alignItems: 'flex-end', marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+              <Text style={{ color: colors.accentBlue, fontFamily: 'Fredoka_500Medium', fontSize: 14 }}>
+                Lupa Password?
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <Pressable
             style={({ pressed }) => [
               styles.primaryButton,
