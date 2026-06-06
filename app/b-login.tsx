@@ -1,18 +1,18 @@
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import {
   Alert,
   Pressable,
-  StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
-import { colors, radii, spacing, styles, typography } from './styles';
+import { styles } from './styles';
 
 const BG_IMAGE = require('../assets/images/bg_splash.png');
 const MASCOT_IMAGE = require('../assets/images/splash_icon.png');
@@ -33,8 +33,7 @@ const WelcomeScreen: React.FC = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Ganti 'naung' dengan scheme app kamu yang ada di app.json
-        redirectTo: 'naung://',
+        redirectTo: Linking.createURL('/'),
       },
     });
 
@@ -78,10 +77,10 @@ const WelcomeScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={localStyles.bottomBox}>
-        <Text style={localStyles.loginTitle}>Mulai Perjalananmu</Text>
+      <View style={styles.bottomBox}>
+        <Text style={styles.loginTitle}>Mulai Perjalananmu</Text>
 
-        <View style={localStyles.buttonGroup}>
+        <View style={styles.buttonGroup}>
           <Pressable
             style={({ pressed }) => [
               styles.googleButton,
@@ -95,12 +94,12 @@ const WelcomeScreen: React.FC = () => {
 
           <Pressable
             style={({ pressed }) => [
-              localStyles.emailButton,
+              styles.emailButton,
               pressed && styles.primaryButtonPressed,
             ]}
             onPress={handleEmailLogin}
           >
-            <Text style={localStyles.emailIcon}>✉️</Text>
+            <Text style={styles.emailIcon}>✉️</Text>
             <Text style={styles.primaryButtonText}>Masuk dengan Email</Text>
           </Pressable>
         </View>
@@ -108,53 +107,5 @@ const WelcomeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const localStyles = StyleSheet.create({
-  bottomBox: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radii.xxl,
-    borderTopRightRadius: radii.xxl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl + 16,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    borderBottomWidth: 0,
-    shadowColor: colors.shadowColor,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  loginTitle: {
-    ...typography.headingLg,
-    color: colors.ink,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  buttonGroup: {
-    gap: spacing.md,
-  },
-  emailButton: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.accentGreen,
-    borderRadius: radii.xl,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    shadowColor: colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  emailIcon: {
-    fontSize: 20,
-  },
-});
 
 export default WelcomeScreen;

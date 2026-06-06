@@ -299,7 +299,7 @@ export default function DASSFormScreen() {
     } finally {
       setIsSubmitting(false);
       setConfirmModalVisible(false);
-      router.replace('./dass-history');
+      router.replace('/dass-history');
     }
   };
 
@@ -414,7 +414,7 @@ export default function DASSFormScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalBtnExit}
-                onPress={() => router.replace('./assessment')}
+                onPress={() => router.replace('/assessment')}
                 activeOpacity={0.8}
               >
                 <Text style={styles.modalBtnText}>Keluar</Text>

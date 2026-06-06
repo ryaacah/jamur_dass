@@ -4,7 +4,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import {
-  Dimensions,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VictoryAxis, VictoryBar, VictoryChart } from 'victory-native';
@@ -186,7 +186,7 @@ export default function DassHistoryScreen() {
     ? new Date(selectedData.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
     : 'Belum ada data';
 
-  const { width } = Dimensions.get('window');
+  const { width } = useWindowDimensions();
   const chartWidth = width - 64;
 
   return (

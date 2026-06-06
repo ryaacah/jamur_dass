@@ -6,14 +6,14 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
-  Dimensions,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  useWindowDimensions
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
@@ -98,7 +98,7 @@ function MoodSelector({ selected, onSelect }: { selected: string | null; onSelec
 function QuickActions() {
   return (
     <View style={styles.bentoGrid}>
-      <Link href="./journal" asChild>
+      <Link href="/journal" asChild>
         <TouchableOpacity activeOpacity={0.8} style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}>
           <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
             <Image source={require("../assets/images/mur-jur.png")} style={{ position: "absolute", bottom: -8, left: -8, width: 72, height: 72, transform: [{ scaleX: -1 }], opacity: 0.9 }} contentFit="contain" />
@@ -111,7 +111,7 @@ function QuickActions() {
         </TouchableOpacity>
       </Link>
 
-      <Link href="./breathing" asChild>
+      <Link href="/breathing" asChild>
         <TouchableOpacity activeOpacity={0.8} style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}>
           <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
             <Image source={require("../assets/images/relx.png")} style={{ position: "absolute", bottom: -8, right: -8, width: 72, height: 72, opacity: 0.9 }} contentFit="contain" />
@@ -129,7 +129,7 @@ function QuickActions() {
 
 function DassBanner() {
   return (
-    <Link href="./assessment" asChild>
+    <Link href="/assessment" asChild>
       <TouchableOpacity activeOpacity={0.8} style={StyleSheet.flatten([styles.card, styles.bannerRow])}>
         <View style={{ flex: 1 }}>
           <Text style={styles.cardTitle}>Luangkan Waktu Sejenak untuk Mengenali Dirimu</Text>
@@ -142,7 +142,7 @@ function DassBanner() {
 }
 
 function DassChart({ latestDass }: { latestDass: any }) {
-  const { width } = Dimensions.get("window");
+  const { width } = useWindowDimensions();
   const chartWidth = width - 64;
 
   // Fungsi untuk memetakan teks kategori ke tinggi sumbu-Y (1 sampai 5)
@@ -182,7 +182,7 @@ function DassChart({ latestDass }: { latestDass: any }) {
         <View style={{ height: 16 }} />
       )}
 
-      <Link href="./dass-history" asChild>
+      <Link href="/dass-history" asChild>
         <TouchableOpacity style={styles.seeMoreRow} activeOpacity={0.7}>
           <Text style={styles.seeMoreText}>Lihat selengkapnya ›</Text>
         </TouchableOpacity>
@@ -424,7 +424,7 @@ export default function Index() {
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Link href="./inbox" asChild>
+          <Link href="/inbox" asChild>
             <TouchableOpacity activeOpacity={0.7} accessibilityRole="button" style={{ position: 'relative' }}>
               <Icon name="notifications" size={26} color={colors.ink} />
               {unreadCount > 0 && (
@@ -432,7 +432,7 @@ export default function Index() {
               )}
             </TouchableOpacity>
           </Link>
-          <Link href="./settings-notification" asChild>
+          <Link href="/settings-notification" asChild>
             <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
               <Icon name="settings" size={26} color={colors.ink} />
             </TouchableOpacity>

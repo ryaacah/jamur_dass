@@ -4,7 +4,6 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -115,13 +114,13 @@ export default function MoodDateScreen() {
         </View>
 
         {/* Keterangan Warna / Legend */}
-        <View style={localStyles.legendContainer}>
-          <Text style={localStyles.legendTitle}>Keterangan Mood:</Text>
-          <View style={localStyles.legendRow}>
+        <View style={styles.moodLegendContainer}>
+          <Text style={styles.moodLegendTitle}>Keterangan Mood:</Text>
+          <View style={styles.moodLegendRow}>
             {["senang", "sedih", "marah", "cemas", "rileks"].map((mood) => (
-              <View key={mood} style={localStyles.legendItem}>
-                <View style={[localStyles.legendColor, { backgroundColor: getMoodColor(mood) }]} />
-                <Text style={localStyles.legendLabel}>{mood}</Text>
+              <View key={mood} style={styles.moodLegendItem}>
+                <View style={[styles.moodLegendColor, { backgroundColor: getMoodColor(mood) }]} />
+                <Text style={styles.moodLegendLabel}>{mood}</Text>
               </View>
             ))}
           </View>
@@ -130,19 +129,3 @@ export default function MoodDateScreen() {
     </SafeAreaView>
   );
 }
-
-const localStyles = StyleSheet.create({
-  legendContainer: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: colors.surfaceCard,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-  },
-  legendTitle: { fontSize: 16, fontFamily: "Fredoka_700Bold", color: colors.ink, marginBottom: 12 },
-  legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  legendItem: { flexDirection: "row", alignItems: "center", width: "45%" },
-  legendColor: { width: 16, height: 16, borderRadius: 4, marginRight: 8 },
-  legendLabel: { fontSize: 14, color: colors.inkSoft, textTransform: "capitalize", fontFamily: "Fredoka_400Regular" },
-});
