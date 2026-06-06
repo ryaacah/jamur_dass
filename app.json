@@ -18,7 +18,8 @@
         "backgroundImage": "./assets/images/splash_icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.Jamur"
     },
     "web": {
       "output": "static",
@@ -29,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash_full.png",
+          "image": "./assets/images/splash_icon.png",
           "resizeMode": "cover",
           "backgroundColor": "#FFFFF8"
         }
@@ -41,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e36059bf-1dc3-4c7f-8241-99ea271511e3"
+      }
     }
   }
 }
