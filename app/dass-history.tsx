@@ -156,14 +156,26 @@ export default function DassHistoryScreen() {
     }, [])
   );
 
+  // Fungsi untuk memetakan teks kategori ke tinggi sumbu-Y (1 sampai 5)
+  const getSeverityValue = (cat: string) => {
+    if (!cat) return 0;
+    const c = cat.toLowerCase();
+    if (c.includes('normal')) return 1;
+    if (c.includes('ringan')) return 2;
+    if (c.includes('sedang')) return 3;
+    if (c.includes('sangat')) return 5;
+    if (c.includes('berat') || c.includes('tinggi') || c.includes('parah')) return 4;
+    return 0;
+  };
+
   const chartData = selectedData ? [
-    { x: 'Depresi', y: selectedData.depression_score },
-    { x: 'Kecemasan', y: selectedData.anxiety_score },
-    { x: 'Stres', y: selectedData.stress_score },
+    { x: 'Depresi', y: getSeverityValue(selectedData.depression_category), score: selectedData.depression_score },
+    { x: 'Kecemasan', y: getSeverityValue(selectedData.anxiety_category), score: selectedData.anxiety_score },
+    { x: 'Stres', y: getSeverityValue(selectedData.stress_category), score: selectedData.stress_score },
   ] : [
-    { x: 'Depresi', y: 0 },
-    { x: 'Kecemasan', y: 0 },
-    { x: 'Stres', y: 0 },
+    { x: 'Depresi', y: 0, score: 0 },
+    { x: 'Kecemasan', y: 0, score: 0 },
+    { x: 'Stres', y: 0, score: 0 },
   ];
 
   const totalScore = selectedData ? selectedData.depression_score + selectedData.anxiety_score + selectedData.stress_score : 0;
@@ -223,25 +235,26 @@ export default function DassHistoryScreen() {
         <View style={StyleSheet.flatten([styles.card, styles.chartCard])}>
           <VictoryChart
             width={chartWidth}
-            height={220}
+            height={260}
             domainPadding={{ x: 40 }}
-            padding={{ top: 20, bottom: 40, left: 64, right: 40 }}
-            domain={{ y: [0, 42] }}
+            padding={{ top: 30, bottom: 40, left: 60, right: 40 }}
+            domain={{ y: [0, 5.5] }}
           >
             {/* Y-Axis */}
             <VictoryAxis
               dependentAxis
-              tickValues={[0, 14, 28, 42]}
+              tickValues={[1, 2, 3, 4, 5]}
               tickFormat={(t: number) => {
-                if (t === 0) return 'Normal';
-                if (t === 14) return 'Ringan';
-                if (t === 28) return 'Sedang';
-                if (t === 42) return 'Tinggi';
+                if (t === 1) return 'Normal';
+                if (t === 2) return 'Ringan';
+                if (t === 3) return 'Sedang';
+                if (t === 4) return 'Berat';
+                if (t === 5) return 'S. Parah';
                 return '';
               }}
               style={{
                 axis: { stroke: '#E8E0D0', strokeWidth: 0.5 },
-                tickLabels: { fontSize: 12, fill: colors.ink, fontFamily: 'Fredoka_500Medium' },
+                tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: 'Fredoka_500Medium' },
                 grid: { stroke: '#E8E0D0', strokeWidth: 0.5, strokeDasharray: '4,4' },
               }}
             />
@@ -259,14 +272,14 @@ export default function DassHistoryScreen() {
             <VictoryBar
               data={chartData}
               cornerRadius={{ top: 6 }}
-              labels={({ datum }) => (datum.y > 0 ? datum.y : "")}
+              labels={({ datum }: any) => (datum.y > 0 ? datum.score.toString() : "")}
               style={{
                 data: {
                   fill: ({ datum }: any) =>
                     BAR_COLORS[datum?.x] ?? '#C4B49A',
                   width: 32,
                 },
-                labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold" },
+                labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold", textAnchor: "middle" },
               }}
             />
           </VictoryChart>

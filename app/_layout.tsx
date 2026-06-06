@@ -1,3 +1,4 @@
+// _layout.tsx
 import {
   Fredoka_300Light,
   Fredoka_400Regular,
@@ -5,15 +6,19 @@ import {
   Fredoka_600SemiBold,
   Fredoka_700Bold,
 } from '@expo-google-fonts/fredoka';
+import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
-import { Stack } from "expo-router";
-import * as ExpoSplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
-import * as Notifications from 'expo-notifications';
-import SplashScreen from "./splash-screen";
-import { addNotificationToInbox, NotificationType } from "../lib/notifications";
+import { Stack } from 'expo-router';
+import * as ExpoSplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import SplashScreen from './splash-screen';
 
 ExpoSplashScreen.preventAutoHideAsync();
+
+// Helper cek Expo Go
+function isExpoGo(): boolean {
+  return Constants.executionEnvironment === 'storeClient';
+}
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
@@ -25,50 +30,83 @@ export default function RootLayout() {
     Fredoka_700Bold,
   });
 
+  // ── Init notifikasi ──────────────────────────────────────────────────────
   useEffect(() => {
-    // Listener untuk notifikasi yang masuk ketika aplikasi sedang berjalan (foreground)
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      const { title, body, data } = notification.request.content;
-      
-      const now = new Date();
-      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      
-      addNotificationToInbox({
-        type: (data?.type as NotificationType) || 'mood',
-        title: title || 'Notifikasi',
-        body: body || '',
-        time: `Hari ini, ${timeString}`,
-      });
-    });
+    let cleanupFn: (() => void) | undefined;
 
-    return () => subscription.remove();
+    const initNotifications = async () => {
+      // Expo Go SDK 53+ tidak support push/local notifications sama sekali
+      // Inbox in-app tetap berfungsi karena hanya pakai AsyncStorage
+      if (isExpoGo()) {
+        console.log('Expo Go terdeteksi — sistem notifikasi dinonaktifkan. Inbox in-app tetap aktif.');
+        return;
+      }
+
+      try {
+        const {
+          setupNotificationHandler,
+          requestLocalNotifPermission,
+          syncScheduledNotifications,
+          addNotificationToInbox,
+        } = await import('../lib/notifications');
+
+        await setupNotificationHandler();
+
+        const granted = await requestLocalNotifPermission();
+        if (granted) {
+          await syncScheduledNotifications();
+        }
+
+        const Notifications = await import('expo-notifications');
+
+        if (typeof Notifications.addNotificationReceivedListener !== 'function') {
+          console.log('addNotificationReceivedListener tidak tersedia, skip.');
+          return;
+        }
+
+        const subscription = Notifications.addNotificationReceivedListener(
+          (notification) => {
+            const { title, body, data } = notification.request.content;
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now
+              .getMinutes()
+              .toString()
+              .padStart(2, '0')}`;
+            addNotificationToInbox({
+              type: (data?.type as any) || 'mood',
+              title: title || 'Notifikasi',
+              body: body || '',
+              time: `Hari ini, ${timeString}`,
+            });
+          },
+        );
+
+        cleanupFn = () => subscription.remove();
+      } catch (e) {
+        console.log('Init notifikasi gagal:', e);
+      }
+    };
+
+    initNotifications();
+
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, []);
 
+  // ── Font & splash ────────────────────────────────────────────────────────
   useEffect(() => {
     if (fontError) throw fontError;
 
-    // Tunggu sampai font selesai dimuat sebelum merender custom splash screen
     if (fontsLoaded) {
-      // Sembunyikan native splash screen agar custom splash screen terlihat
       ExpoSplashScreen.hideAsync();
-
-      const timer = setTimeout(() => {
-        setShowSplash(false);
-      }, 3000);
-
+      const timer = setTimeout(() => setShowSplash(false), 3000);
       return () => clearTimeout(timer);
     }
   }, [fontsLoaded, fontError]);
 
-  // Jika font belum dimuat, return null (native splash screen akan tetap tampil)
-  if (!fontsLoaded) {
-    return null;
-  }
-
-  // Setelah font dimuat, tampilkan custom splash screen selama showSplash bernilai true
-  if (showSplash) {
-    return <SplashScreen />;
-  }
+  if (!fontsLoaded) return null;
+  if (showSplash) return <SplashScreen />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -79,11 +117,11 @@ export default function RootLayout() {
       <Stack.Screen name="dass-history" />
       <Stack.Screen
         name="mood-date"
-        options={{ presentation: "transparentModal", animation: "fade" }}
+        options={{ presentation: 'transparentModal', animation: 'fade' }}
       />
       <Stack.Screen
         name="result-date"
-        options={{ presentation: "transparentModal", animation: "fade" }}
+        options={{ presentation: 'transparentModal', animation: 'fade' }}
       />
     </Stack>
   );
