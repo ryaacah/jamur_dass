@@ -22,18 +22,11 @@ import { BAR_COLORS, colors, styles } from './styles';
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ScoreCategory = 'Normal' | 'Ringan' | 'Sedang' | 'Tinggi' | 'Sangat Tinggi';
 
-interface ScoreItem {
-  label: string;
-  value: number;
-  category: ScoreCategory;
-}
-
-interface DassData {
-  date: string;
-  scores: ScoreItem[];
-  total: number;
-  totalCategory: ScoreCategory;
-}
+// interface ScoreItem {
+//   label: string;
+//   value: number;
+//   category: ScoreCategory;
+// }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SEVERITY_LEVELS = ['Normal', 'Ringan', 'Sedang', 'Berat', 'Sangat Parah'];

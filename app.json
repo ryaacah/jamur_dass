@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Jamur",
-    "slug": "Jamur",
+    "name": "Naung",
+    "slug": "Naung",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/splash_icon.png",
@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.Jamur"
+      "package": "com.anonymous.Naung"
     },
     "web": {
       "output": "static",

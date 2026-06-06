@@ -213,7 +213,7 @@ export default function Index() {
     return `${year}-${month}-${day}`;
   };
 
-  const loadMoodForUser = async (uid: string) => {
+  const loadMoodForUser = useCallback(async (uid: string) => {
     const today = getLocalDateString();
     const { data } = await supabase
       .from("moods")
@@ -224,7 +224,7 @@ export default function Index() {
       .limit(1)
       .maybeSingle();
     if (data?.mood) setSelectedMood(data.mood);
-  };
+  }, []);
 
   // ── Fungsi utama load nickname & session ──
   useEffect(() => {
@@ -322,7 +322,7 @@ export default function Index() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadMoodForUser]);
 
   // ── Refresh DASS chart setiap kali halaman difokuskan ──
   useFocusEffect(
@@ -412,8 +412,6 @@ export default function Index() {
     if (hour < 19) return "Selamat sore";
     return "Selamat malam";
   };
-
-  const activeMood = MOODS.find((m) => m.id === selectedMood);
 
   return (
     <SafeAreaView style={styles.safeArea}>

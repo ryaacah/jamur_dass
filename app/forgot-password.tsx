@@ -18,7 +18,11 @@ import { colors, styles } from './styles';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ 
+    code?: string; 
+    access_token?: string; 
+    error_description?: string; 
+  }>();
   const insets = useSafeAreaInsets();
   
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -35,17 +39,20 @@ export default function ForgotPasswordScreen() {
   const url = Linking.useURL();
 
   // Memantau deep link jika user mengklik link dari email
+  // Destructure parameter untuk dipakai dengan aman di dalam dependency array
+  const { code, access_token} = params;
+
   useEffect(() => {
     if (step === 3) return; // Mencegah reset form jika sudah berhasil
 
     const handleDeepLink = async () => {
-      let allParams: Record<string, string> = { ...params } as Record<string, string>;
+      let allParams: Record<string, string> = {} as any;
       
       if (url) {
         try {
           const parsed = Linking.parse(url);
           if (parsed.queryParams) {
-            allParams = { ...allParams, ...parsed.queryParams } as Record<string, string>;
+            allParams = { ...allParams, ...parsed.queryParams } as any;
           }
           
           const hashSplit = url.split('#');
@@ -95,10 +102,10 @@ export default function ForgotPasswordScreen() {
       }
     };
 
-    if (params.code || params.access_token || url) {
+    if (code || access_token || url) {
       handleDeepLink();
     }
-  }, [url, params.code, params.access_token, step]);
+  }, [url, code, access_token, step, params]);
 
   const handleRequestLink = async () => {
     const emailAddress = email.trim().toLowerCase();

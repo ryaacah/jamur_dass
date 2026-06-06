@@ -10,7 +10,6 @@ import {
   Animated,
   Easing,
   Modal,
-  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -294,7 +293,7 @@ function ClockFace({ mode, hour, minute, onHourChange, onMinuteChange, onRelease
     return () => {
       if (runningAnim.current) runningAnim.current.stop();
     };
-  }, [mode, hour, minute]);
+  }, [mode, hour, minute, animX, animY]);
 
   const handleTouch = (e: any) => {
     const { locationX, locationY } = e.nativeEvent;
@@ -594,10 +593,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const [pickerHour, setPickerHour] = useState<number>(13);
   const [pickerMinute, setPickerMinute] = useState<number>(0);
   const [pickerMode, setPickerMode] = useState<'hour' | 'minute'>('hour');
-
-  const handleHourChange = (h: number) => {
-    setPickerHour(h);
-  };
 
   const handleMinuteChange = (m: number) => {
     setPickerMinute(m);
