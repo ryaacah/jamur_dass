@@ -1577,40 +1577,58 @@ export const styles = StyleSheet.create({
   logoutContainer: { marginTop: 16, marginBottom: 32, gap: 12 },
   akunButton: { width: '100%', height: 48, borderRadius: 12, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
   akunButtonText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
+  akunButtonLogout: { backgroundColor: colors.accentRed },
   disabledSection: { opacity: 0.5 },
   editProfileBtn: { position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentYellow, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: colors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 },
 
-  // Custom Time Picker Styles
-  tpCard: { backgroundColor: colors.surfaceCard, borderRadius: 32, padding: 24, width: '100%', maxWidth: 360, shadowColor: colors.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 },
-  tpHeader: { fontSize: 14, fontWeight: '700', color: colors.inkSoft, letterSpacing: 1.5, marginBottom: 24, fontFamily: 'Fredoka_700Bold' },
-  tpDigitalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 32 },
-  tpTimeBox: { width: 88, height: 80, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
-  tpTimeBoxActive: { backgroundColor: colors.tertiaryContainer, borderColor: colors.ink },
-  tpTimeBoxInactive: { backgroundColor: colors.surfaceVariant },
-  tpTimeText: { fontSize: 52, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
-  tpColon: { fontSize: 40, fontWeight: '700', color: colors.inkSoft, marginBottom: 8 },
-  tpAmPmCol: { borderWidth: 2, borderColor: colors.ink, borderRadius: 12, overflow: 'hidden' },
-  tpAmPmBtn: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surfaceCard },
-  tpAmPmBtnActive: { backgroundColor: colors.tertiaryContainer },
-  tpAmPmText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft, textAlign: 'center' },
-  tpAmPmTextActive: { color: colors.ink },
-  tpAmPmDivider: { height: 2, backgroundColor: colors.ink },
+  // Custom Time Picker Styles — Material 24h style
+  tpCard: { backgroundColor: colors.surfaceCard, borderRadius: 28, overflow: 'hidden', width: '100%', maxWidth: 360, shadowColor: colors.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 8 },
   
-  tpClockContainer: { alignItems: 'center', marginBottom: 32 },
-  tpClockFace: { width: 240, height: 240, borderRadius: 120, backgroundColor: colors.surfaceVariant, alignItems: 'center', justifyContent: 'center' },
-  tpClockNumber: { position: 'absolute', width: 32, height: 32, textAlign: 'center', textAlignVertical: 'center', fontSize: 17, fontWeight: '600', color: colors.ink, fontFamily: 'Fredoka_600SemiBold' },
-  
-  tpClockHandWrapper: { position: 'absolute', width: 40, height: 240, alignItems: 'center' },
-  tpClockHandLine: { width: 2, height: 92, backgroundColor: colors.accentRed, marginTop: 28 },
-  tpClockHandCircle: { position: 'absolute', top: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentRed, alignItems: 'center', justifyContent: 'center' },
-  tpClockHandDot: { position: 'absolute', top: 116, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accentRed },
-  tpClockHandText: { fontSize: 16, fontWeight: '700', color: colors.ink, fontFamily: 'Fredoka_700Bold' },
-  
-  tpFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
-  tpBtnCancel: { paddingHorizontal: 16, paddingVertical: 8 },
-  tpBtnCancelText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.inkSoft },
-  tpBtnOk: { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.accentGreen, borderRadius: 12, borderWidth: 2, borderColor: colors.ink },
-  tpBtnOkText: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: colors.ink },
+  // Profil & Settings Notification Custom Styles
+  profilDetailsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  profilAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surfaceVariant },
+  profilInfo: { flex: 1, gap: 12 },
+  profilTextLink: { color: colors.accentBlue, fontFamily: 'Fredoka_700Bold' },
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 20 },
+  avatarOption: { width: 60, height: 60, borderRadius: 30, padding: 3, borderWidth: 3, borderColor: 'transparent' },
+  avatarOptionSelected: { borderColor: colors.ink },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 999 },
+  profilInput: { width: '100%', textAlign: 'center', marginBottom: 16 },
+  modalBtnCancel: { flex: 1, backgroundColor: colors.surfaceVariant },
+  modalBtnSave: { flex: 1, backgroundColor: colors.accentGreen },
+  timeChipIcon: { marginLeft: 4 },
+  modalCardNoPadding: { padding: 0, overflow: 'hidden' },
+
+  // Time Picker Header & Digital Display
+  tpModalHeader: { backgroundColor: colors.accentPurple, padding: 24, alignItems: 'center' },
+  tpModalTitle: { fontFamily: 'Fredoka_500Medium', color: colors.inkSoft, marginBottom: 16 },
+  tpDigitalContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tpTimeBox: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
+  tpTimeBoxActive: { backgroundColor: colors.canvas, borderColor: colors.borderDefault },
+  tpTimeBoxInactive: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  tpTimeText: { fontFamily: 'Fredoka_700Bold', fontSize: 40, color: colors.ink },
+  tpTimeTextInactive: { color: colors.inkSoft },
+  tpColon: { fontFamily: 'Fredoka_700Bold', fontSize: 40, color: colors.inkSoft },
+
+  // Time Picker Clock Body
+  tpClockBody: { padding: 24, alignItems: 'center', backgroundColor: colors.canvas },
+  tpClockContainerWrapper: { width: 256, height: 256, backgroundColor: '#F9F8F5', borderRadius: 128, position: 'relative' },
+  // Outer clock face (full circle, light gray)
+  tpClockFace: { width: 256, height: 256, borderRadius: 128, backgroundColor: '#ECEFF1', alignItems: 'center', justifyContent: 'center' },
+  // Numbers on outer ring (1-12)
+  tpClockNumber: { position: 'absolute', width: 36, height: 36, textAlign: 'center', textAlignVertical: 'center', fontSize: 16, fontFamily: 'Fredoka_600SemiBold', color: colors.ink },
+  // Numbers on inner ring (13-24/00)
+  tpClockNumberInner: { position: 'absolute', width: 28, height: 28, textAlign: 'center', textAlignVertical: 'center', fontSize: 12, fontFamily: 'Fredoka_500Medium', color: colors.inkSoft },
+  // Selected number bubble
+  tpClockNumberSelected: { backgroundColor: colors.accentPurple, borderRadius: 18, overflow: 'hidden', color: colors.ink },
+  tpSvgOverlay: { position: 'absolute', top: 0, left: 0 },
+
+  // Time Picker Footer
+  tpFooter: { flexDirection: 'row', justifyContent: 'flex-end', width: '100%', marginTop: 32, gap: 12 },
+  tpBtnCancel: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  tpBtnCancelText: { fontFamily: 'Fredoka_600SemiBold', fontSize: 14, color: colors.inkSoft },
+  tpBtnOk: { backgroundColor: colors.accentGreen, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  tpBtnOkText: { fontFamily: 'Fredoka_600SemiBold', fontSize: 14, color: colors.ink },
 
   // Custom Notification Switch Styles
   switchTrack: { width: 80, height: 44, borderRadius: 22, justifyContent: 'center', borderWidth: 2, borderColor: colors.ink },

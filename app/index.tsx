@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
+import { getInboxNotifications } from "../lib/notifications";
 import { BAR_COLORS, colors, styles } from "./styles";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -144,23 +145,35 @@ function DassChart({ latestDass }: { latestDass: any }) {
   const { width } = Dimensions.get("window");
   const chartWidth = width - 64;
 
+  // Fungsi untuk memetakan teks kategori ke tinggi sumbu-Y (1 sampai 5)
+  const getSeverityValue = (cat: string) => {
+    if (!cat) return 0;
+    const c = cat.toLowerCase();
+    if (c.includes('normal')) return 1;
+    if (c.includes('ringan')) return 2;
+    if (c.includes('sedang')) return 3;
+    if (c.includes('sangat')) return 5;
+    if (c.includes('berat') || c.includes('tinggi') || c.includes('parah')) return 4;
+    return 0;
+  };
+
   const chartData = latestDass ? [
-    { x: "Depresi", y: latestDass.depression_score },
-    { x: "Kecemasan", y: latestDass.anxiety_score },
-    { x: "Stres", y: latestDass.stress_score },
+    { x: "Depresi", y: getSeverityValue(latestDass.depression_category), score: latestDass.depression_score },
+    { x: "Kecemasan", y: getSeverityValue(latestDass.anxiety_category), score: latestDass.anxiety_score },
+    { x: "Stres", y: getSeverityValue(latestDass.stress_category), score: latestDass.stress_score },
   ] : [
-    { x: "Depresi", y: 0 },
-    { x: "Kecemasan", y: 0 },
-    { x: "Stres", y: 0 },
+    { x: "Depresi", y: 0, score: 0 },
+    { x: "Kecemasan", y: 0, score: 0 },
+    { x: "Stres", y: 0, score: 0 },
   ];
 
   return (
     <View style={StyleSheet.flatten([styles.mutableCard, styles.chartCard])}>
       <Text style={styles.cardTitle}>Riwayat Skor DASS-21</Text>
-      <VictoryChart width={chartWidth} height={220} domainPadding={{ x: 40 }} padding={{ top: 20, bottom: 40, left: 64, right: 40 }} domain={{ y: [0, 42] }}>
-        <VictoryAxis dependentAxis tickValues={[0, 14, 28, 42]} tickFormat={(t: number) => { if (t === 0) return "Normal"; if (t === 14) return "Ringan"; if (t === 28) return "Sedang"; if (t === 42) return "Tinggi"; return ""; }} style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 12, fill: colors.ink, fontFamily: "Fredoka_500Medium" }, grid: { stroke: "#E8E0D0", strokeWidth: 0.5, strokeDasharray: "4,4" } }} />
+      <VictoryChart width={chartWidth} height={260} domainPadding={{ x: 40 }} padding={{ top: 30, bottom: 40, left: 60, right: 40 }} domain={{ y: [0, 5.5] }}>
+        <VictoryAxis dependentAxis tickValues={[1, 2, 3, 4, 5]} tickFormat={(t: number) => { if (t === 1) return 'Normal'; if (t === 2) return 'Ringan'; if (t === 3) return 'Sedang'; if (t === 4) return 'Berat'; if (t === 5) return 'S. Parah'; return ''; }} style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 11, fill: colors.ink, fontFamily: "Fredoka_500Medium" }, grid: { stroke: "#E8E0D0", strokeWidth: 0.5, strokeDasharray: "4,4" } }} />
         <VictoryAxis style={{ axis: { stroke: "#E8E0D0", strokeWidth: 0.5 }, tickLabels: { fontSize: 13, fill: colors.ink, fontFamily: "Fredoka_500Medium" }, grid: { stroke: "transparent" } }} />
-        <VictoryBar data={chartData} cornerRadius={{ top: 6 }} labels={({ datum }) => (datum.y > 0 ? datum.y : "")} style={{ data: { fill: ({ datum }: any) => BAR_COLORS[datum?.x] ?? "#C4B49A", width: 32 }, labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold" } }} />
+        <VictoryBar data={chartData} cornerRadius={{ top: 6 }} labels={({ datum }: any) => (datum.y > 0 ? datum.score.toString() : "")} style={{ data: { fill: ({ datum }: any) => BAR_COLORS[datum?.x] ?? "#C4B49A", width: 32 }, labels: { fill: colors.ink, fontSize: 14, fontFamily: "Fredoka_700Bold", textAnchor: "middle" } }} />
       </VictoryChart>
 
       {!latestDass ? (
@@ -190,6 +203,7 @@ export default function Index() {
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const getLocalDateString = () => {
     const now = new Date();
@@ -208,7 +222,7 @@ export default function Index() {
       .eq("date", today)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     if (data?.mood) setSelectedMood(data.mood);
   };
 
@@ -229,7 +243,7 @@ export default function Index() {
             .from('profile')
             .select('nickname')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (profile?.nickname) {
             setNickname(profile.nickname);
@@ -291,7 +305,7 @@ export default function Index() {
             .from('profile')
             .select('nickname')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (profile?.nickname) {
             setNickname(profile.nickname);
@@ -324,7 +338,15 @@ export default function Index() {
           .maybeSingle();
         if (data) setLatestDass(data);
       };
+
+      const fetchUnreadNotif = async () => {
+        const inbox = await getInboxNotifications();
+        const unread = inbox.filter((n) => !n.isRead).length;
+        setUnreadCount(unread);
+      };
+
       fetchDass();
+      fetchUnreadNotif();
     }, [userId])
   );
 
@@ -338,7 +360,7 @@ export default function Index() {
       .select("id")
       .eq("user_id", userId)
       .eq("date", today)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       await supabase.from("moods").update({ mood: moodId }).eq("id", existing.id);
@@ -402,6 +424,14 @@ export default function Index() {
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Link href="./inbox" asChild>
+            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button" style={{ position: 'relative' }}>
+              <Icon name="notifications" size={26} color={colors.ink} />
+              {unreadCount > 0 && (
+                <View style={{ position: 'absolute', top: 0, right: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accentRed, borderWidth: 1.5, borderColor: colors.canvas }} />
+              )}
+            </TouchableOpacity>
+          </Link>
           <Link href="./settings-notification" asChild>
             <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
               <Icon name="settings" size={26} color={colors.ink} />

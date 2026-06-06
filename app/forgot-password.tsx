@@ -1,6 +1,6 @@
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
@@ -18,6 +18,7 @@ import { colors, styles } from './styles';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -35,29 +36,30 @@ export default function ForgotPasswordScreen() {
 
   // Memantau deep link jika user mengklik link dari email
   useEffect(() => {
-    if (!url) return;
-    
+    if (step === 3) return; // Mencegah reset form jika sudah berhasil
+
     const handleDeepLink = async () => {
-      let allParams: Record<string, string> = {};
+      let allParams: Record<string, string> = { ...params } as Record<string, string>;
       
-      try {
-        const parsed = Linking.parse(url);
-        if (parsed.queryParams) {
-          allParams = { ...parsed.queryParams } as Record<string, string>;
-        }
-        
-        // Ekstrak parameter dari fragment (hash) jika ada (#access_token=...)
-        const hashSplit = url.split('#');
-        if (hashSplit.length > 1) {
-          const hashStr = hashSplit[1].replace('?', '&'); // jaga-jaga ada tanda tanya
-          const hashParams = hashStr.split('&');
-          for (const param of hashParams) {
-            const [key, val] = param.split('=');
-            if (key && val) allParams[key] = decodeURIComponent(val);
+      if (url) {
+        try {
+          const parsed = Linking.parse(url);
+          if (parsed.queryParams) {
+            allParams = { ...allParams, ...parsed.queryParams } as Record<string, string>;
           }
+          
+          const hashSplit = url.split('#');
+          if (hashSplit.length > 1) {
+            const hashStr = hashSplit[1].replace('?', '&'); 
+            const hashParams = hashStr.split('&');
+            for (const param of hashParams) {
+              const [key, val] = param.split('=');
+              if (key && val) allParams[key] = decodeURIComponent(val);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing URL:', e);
         }
-      } catch (e) {
-        console.error('Error parsing URL:', e);
       }
 
       if (allParams.error_description) {
@@ -93,8 +95,10 @@ export default function ForgotPasswordScreen() {
       }
     };
 
-    handleDeepLink();
-  }, [url]);
+    if (params.code || params.access_token || url) {
+      handleDeepLink();
+    }
+  }, [url, params.code, params.access_token, step]);
 
   const handleRequestLink = async () => {
     const emailAddress = email.trim().toLowerCase();
