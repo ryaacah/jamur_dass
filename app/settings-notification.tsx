@@ -1,7 +1,9 @@
+// settings-notification.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -10,14 +12,17 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
+import {
+  loadNotificationSettings,
+  saveAndSyncNotifications,
+} from '../lib/notifications';
 import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
@@ -45,6 +50,13 @@ interface SectionScheduleProps {
 
 const ALL_DAYS: DayId[] = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Ming'];
 
+const CLOCK_SIZE = 256;
+const CLOCK_CENTER = CLOCK_SIZE / 2; // 128
+const OUTER_RADIUS = 96;
+const INNER_RADIUS = 60;
+const NUM_SIZE_OUTER = 36;
+const NUM_SIZE_INNER = 28;
+
 // ─── Daftar Opsi Avatar ───────────────────────────────────────────────────────
 const AVATARS = [
   { id: 'icon1', source: require('../assets/images/icon1.png') },
@@ -64,20 +76,31 @@ interface MushroomFaceProps {
 
 function MushroomFace({ isOn }: MushroomFaceProps) {
   const mouthPath = isOn
-    ? 'M9 15C9 15 10.5 17 12 17C13.5 17 15 15 15 15' // senyum
-    : 'M9 16H15';                                      // datar
+    ? 'M9 15C9 15 10.5 17 12 17C13.5 17 15 15 15 15'
+    : 'M9 16H15';
 
   return (
     <Svg viewBox="0 0 24 24" width={24} height={24} fill="none">
       <Circle cx={12} cy={12} r={10} fill="white" />
       <Circle cx={8} cy={11} r={1.5} fill={colors.ink} />
       <Circle cx={16} cy={11} r={1.5} fill={colors.ink} />
-      <Path d={mouthPath} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+      <Path
+        d={mouthPath}
+        stroke={colors.ink}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
     </Svg>
   );
 }
 
-function MushroomToggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
+function MushroomToggle({
+  value,
+  onToggle,
+}: {
+  value: boolean;
+  onToggle: () => void;
+}) {
   const translateX = useRef(new Animated.Value(value ? 40 : 4)).current;
 
   useEffect(() => {
@@ -91,8 +114,15 @@ function MushroomToggle({ value, onToggle }: { value: boolean; onToggle: () => v
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onToggle}>
-      <View style={[styles.switchTrack, value ? styles.switchTrackOn : styles.switchTrackOff]}>
-        <Animated.View style={[styles.switchThumb, { transform: [{ translateX }] }]}>
+      <View
+        style={[
+          styles.switchTrack,
+          value ? styles.switchTrackOn : styles.switchTrackOff,
+        ]}
+      >
+        <Animated.View
+          style={[styles.switchThumb, { transform: [{ translateX }] }]}
+        >
           <MushroomFace isOn={value} />
         </Animated.View>
       </View>
@@ -127,7 +157,6 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
   <View style={[styles.card, styles.sectionCard]}>
     <Text style={styles.cardTitle}>{title}</Text>
 
-    {/* Day chips */}
     {days && selectedDays && onToggleDay && (
       <View style={styles.chipRow}>
         {days.map((day) => (
@@ -135,13 +164,12 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
             key={day}
             label={day}
             selected={selectedDays.includes(day)}
-            onPress={onToggleDay}
+            onPress={() => onToggleDay(day)}
           />
         ))}
       </View>
     )}
 
-    {/* Time row */}
     <View style={styles.settingsTimeRow}>
       {times.map((t, idx) => (
         <TouchableOpacity
@@ -152,7 +180,12 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
           accessibilityRole="button"
         >
           <Text style={styles.timeChipText}>{t}</Text>
-          <Icon name="close" size={16} color={colors.inkSoft} style={{ marginLeft: 4 }} />
+          <Icon
+            name="close"
+            size={16}
+            color={colors.inkSoft}
+        style={styles.timeChipIcon}
+          />
         </TouchableOpacity>
       ))}
 
@@ -168,6 +201,244 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
     </View>
   </View>
 );
+
+// ─── Material 24h Clock Face ──────────────────────────────────────────────────
+
+interface ClockFaceProps {
+  mode: 'hour' | 'minute';
+  hour: number;    // 0-23
+  minute: number;  // 0-59
+  onHourChange: (h: number) => void;
+  onMinuteChange: (m: number) => void;
+  onRelease?: () => void;
+}
+
+function calcAngle(mode: 'hour' | 'minute', hour: number, minute: number): number {
+  return mode === 'hour' ? ((hour % 12) / 12) * 360 : (minute / 60) * 360;
+}
+
+function calcLength(mode: 'hour' | 'minute', hour: number): number {
+  return mode === 'hour' && (hour === 0 || hour > 12) ? INNER_RADIUS : OUTER_RADIUS;
+}
+
+// Hitung koordinat (x,y) ujung jarum dari sudut akumulatif + panjang
+function angleToXY(accAngle: number, length: number): { x: number; y: number } {
+  const rad = ((accAngle - 90) * Math.PI) / 180;
+  return {
+    x: CLOCK_CENTER + length * Math.cos(rad),
+    y: CLOCK_CENTER + length * Math.sin(rad),
+  };
+}
+
+// AnimatedLine & AnimatedCircle: wrap SVG elements supaya bisa pakai Animated.Value
+const AnimatedLine = Animated.createAnimatedComponent(Line as any);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle as any);
+
+function ClockFace({ mode, hour, minute, onHourChange, onMinuteChange, onRelease }: ClockFaceProps) {
+  // accAngle: sudut akumulatif, TIDAK di-clamp ke 0-360.
+  // Ini ref JS biasa (bukan Animated) — hanya untuk menghitung target delta.
+  const accAngle = useRef<number>(calcAngle(mode, hour, minute));
+
+  // Animated.Value untuk koordinat langsung — TIDAK pakai useNativeDriver
+  // karena SVG props bukan native props, tapi ini tetap lebih smooth dari
+  // setState karena tidak trigger React reconciliation tiap frame.
+  const animX = useRef(new Animated.Value(
+    angleToXY(accAngle.current, calcLength(mode, hour)).x
+  )).current;
+  const animY = useRef(new Animated.Value(
+    angleToXY(accAngle.current, calcLength(mode, hour)).y
+  )).current;
+
+  // Untuk hapus animasi sebelumnya
+  const runningAnim = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    const targetAngle = calcAngle(mode, hour, minute);
+    const targetLen   = calcLength(mode, hour);
+
+    // Delta terpendek — tidak pernah lompat > 180°
+    let delta = targetAngle - (accAngle.current % 360);
+    if (delta > 180)  delta -= 360;
+    if (delta < -180) delta += 360;
+    const finalAngle = accAngle.current + delta;
+
+    // Hitung target (x,y) dari finalAngle + targetLen
+    const { x: targetX, y: targetY } = angleToXY(finalAngle, targetLen);
+
+    // Stop animasi sebelumnya
+    if (runningAnim.current) runningAnim.current.stop();
+
+    // Jalankan animasi koordinat (bukan rotasi) menggunakan spring RN
+    // Spring terasa lebih natural di sentuhan dibanding timing
+    runningAnim.current = Animated.parallel([
+      Animated.spring(animX, {
+        toValue: targetX,
+        useNativeDriver: false, // SVG props tidak support native driver
+        speed: 20,
+        bounciness: 3,
+      }),
+      Animated.spring(animY, {
+        toValue: targetY,
+        useNativeDriver: false,
+        speed: 20,
+        bounciness: 3,
+      }),
+    ]);
+    runningAnim.current.start(({ finished }) => {
+      // Update accAngle hanya setelah animasi selesai agar delta berikutnya benar
+      if (finished) {
+        accAngle.current = finalAngle;
+      }
+    });
+
+    return () => {
+      if (runningAnim.current) runningAnim.current.stop();
+    };
+  }, [mode, hour, minute]);
+
+  const handleTouch = (e: any) => {
+    const { locationX, locationY } = e.nativeEvent;
+    const dx = locationX - CLOCK_CENTER;
+    const dy = locationY - CLOCK_CENTER;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    let angle = (Math.atan2(dx, -dy) * 180) / Math.PI;
+    if (angle < 0) angle += 360;
+
+    if (mode === 'hour') {
+      let h = Math.round(angle / 30) % 12;
+      const useInner = dist < (OUTER_RADIUS + INNER_RADIUS) / 2;
+      if (useInner) {
+        h = h === 0 ? 0 : h + 12;
+      } else {
+        if (h === 0) h = 12;
+      }
+      onHourChange(h);
+    } else {
+      const m = Math.round(angle / 6) % 60;
+      onMinuteChange(m);
+    }
+  };
+
+  // Outer ring: 12, 1, 2, ..., 11
+  const outerNums = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  // Inner ring: 00, 13, 14, ..., 23
+  const innerNums = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+
+  const isInnerSelected = mode === 'hour' && (hour === 0 || hour > 12);
+
+  return (
+    <View
+      style={styles.tpClockFace}
+      onStartShouldSetResponder={() => true}
+      onResponderGrant={handleTouch}
+      onResponderMove={handleTouch}
+      onResponderRelease={() => {
+        if (onRelease) onRelease();
+      }}
+    >
+      {/* ── Jarum jam: Animated SVG dengan koordinat langsung ─────────────
+          - Tidak ada transform/rotate → tidak ada masalah inputRange
+          - Tidak ada setState di loop → tidak ada re-render tiap frame
+          - animX/animY dikontrol Animated.spring RN → smooth di native */}
+      <Svg
+        width={CLOCK_SIZE}
+        height={CLOCK_SIZE}
+        style={styles.tpSvgOverlay}
+        pointerEvents="none"
+      >
+        {/* Garis jarum */}
+        <AnimatedLine
+          x1={CLOCK_CENTER}
+          y1={CLOCK_CENTER}
+          x2={animX}
+          y2={animY}
+          stroke={colors.accentPurple}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+        {/* Titik pivot tengah */}
+        <Circle
+          cx={CLOCK_CENTER}
+          cy={CLOCK_CENTER}
+          r={4}
+          fill={colors.accentPurple}
+        />
+        {/* Bulatan ujung jarum */}
+        <AnimatedCircle
+          cx={animX}
+          cy={animY}
+          r={18}
+          fill={colors.accentPurple}
+        />
+      </Svg>
+
+      {/* ── Outer ring numbers ─────────────────────────────────────────── */}
+      {outerNums.map((num, i) => {
+        const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+        const x = CLOCK_CENTER + OUTER_RADIUS * Math.cos(angle) - NUM_SIZE_OUTER / 2;
+        const y = CLOCK_CENTER + OUTER_RADIUS * Math.sin(angle) - NUM_SIZE_OUTER / 2;
+
+        const isHourSelected =
+          mode === 'hour' &&
+          !isInnerSelected &&
+          (hour === num || (num === 12 && hour === 12));
+        const isMinSelected =
+          mode === 'minute' && (num * 5) % 60 === minute;
+        const isSelected = isHourSelected || isMinSelected;
+
+        return (
+          <Text
+            key={`outer-${num}`}
+            pointerEvents="none"
+            style={[
+              styles.tpClockNumber,
+              {
+                left: x,
+                top: y,
+                width: NUM_SIZE_OUTER,
+                height: NUM_SIZE_OUTER,
+              },
+              isSelected && styles.tpClockNumberSelected,
+            ]}
+          >
+            {mode === 'minute' ? String((num * 5) % 60).padStart(2, '0') : num}
+          </Text>
+        );
+      })}
+
+      {/* ── Inner ring numbers (hour only) ────────────────────────────── */}
+      {mode === 'hour' &&
+        innerNums.map((num, i) => {
+          const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+          const x = CLOCK_CENTER + INNER_RADIUS * Math.cos(angle) - NUM_SIZE_INNER / 2;
+          const y = CLOCK_CENTER + INNER_RADIUS * Math.sin(angle) - NUM_SIZE_INNER / 2;
+          const isSelected = hour === num;
+          const label = num === 0 ? '00' : String(num);
+
+          return (
+            <Text
+              key={`inner-${num}`}
+              pointerEvents="none"
+              style={[
+                styles.tpClockNumberInner,
+                {
+                  left: x,
+                  top: y,
+                  width: NUM_SIZE_INNER,
+                  height: NUM_SIZE_INNER,
+                },
+                isSelected && styles.tpClockNumberSelected,
+                isSelected && { borderRadius: NUM_SIZE_INNER / 2 },
+              ]}
+            >
+              {label}
+            </Text>
+          );
+        })}
+    </View>
+  );
+}
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -188,11 +459,10 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   // ── State ──────────────────────────────────────────────────────────────────
 
   const [notifEnabled, setNotifEnabled] = useState<boolean>(true);
-
   const [moodTimes, setMoodTimes] = useState<string[]>(['21:00']);
   const [jurnalTimes, setJurnalTimes] = useState<string[]>(['21:00']);
 
-  // ── Profil (Nickname) State ─────────────────────────────────────────────────
+  // ── Profil State ────────────────────────────────────────────────────────────
   const [nickname, setNickname] = useState<string>('');
   const [tempName, setTempName] = useState<string>('');
   const [isModalVisible, setModalVisible] = useState<boolean>(false);
@@ -200,24 +470,25 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const [tempAvatar, setTempAvatar] = useState<string>('icon1');
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
+  // ── Load profil dari AsyncStorage & Supabase ────────────────────────────────
   useEffect(() => {
     const loadName = async () => {
       try {
-        // 1. Ambil dari lokal dulu
         const savedName = await AsyncStorage.getItem('user_nickname');
         if (savedName) setNickname(savedName);
         const savedAvatar = await AsyncStorage.getItem('user_avatar');
         if (savedAvatar) setAvatar(savedAvatar);
 
-        // 2. Ambil dari Supabase untuk memastikan sinkronisasi
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
-          const { data: profile, error } = await supabase
+          const { data: profile } = await supabase
             .from('profile')
             .select('nickname')
             .eq('id', session.user.id)
-            .single();
-          
+            .maybeSingle();
+
           if (profile?.nickname) {
             setNickname(profile.nickname);
             await AsyncStorage.setItem('user_nickname', profile.nickname);
@@ -230,161 +501,180 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     loadName();
   }, []);
 
-  // Mengecek sesi login di Supabase
+  // ── Load notification settings ──────────────────────────────────────────────
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await loadNotificationSettings();
+        setNotifEnabled(settings.notifEnabled);
+        setMoodTimes(settings.moodTimes);
+        setJurnalTimes(settings.jurnalTimes);
+        setAssesmenSelectedDays(settings.assesmenDays as DayId[]);
+        setAssesmenTimes(settings.assesmenTimes);
+      } catch (error) {
+        console.error('Gagal memuat pengaturan notifikasi', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // ── Cek sesi login Supabase ─────────────────────────────────────────────────
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSessionEmail(session?.user?.email || null);
     };
     fetchSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSessionEmail(session?.user?.email || null);
     });
-    return () => authListener.subscription.unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSaveName = async () => {
-  if (!tempName.trim()) return;
+    if (!tempName.trim()) return;
 
-  try {
-    // 1. Pastikan ada sesi (anonymous atau email)
-    let { data: { session } } = await supabase.auth.getSession();
+    try {
+      let {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    if (!session) {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      session = data.session;
+      if (!session) {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error) throw error;
+        session = data.session;
+      }
+
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Tidak bisa mendapatkan user ID');
+
+      await AsyncStorage.setItem('user_nickname', tempName.trim());
+      await AsyncStorage.setItem('user_avatar', tempAvatar);
+      await AsyncStorage.setItem('user_uuid', userId);
+      setNickname(tempName.trim());
+      setAvatar(tempAvatar);
+
+      const { error: upsertError } = await supabase.from('profile').upsert(
+        {
+          id: userId,
+          user_id: userId,
+          nickname: tempName.trim(),
+          is_auth: !!session?.user?.email,
+        },
+        { onConflict: 'id' }
+      );
+
+      if (upsertError) throw upsertError;
+
+      setModalVisible(false);
+    } catch (error: any) {
+      console.error('Gagal menyimpan profil:', error);
+      Alert.alert('Kesalahan', error.message || 'Gagal menyimpan perubahan');
     }
+  };
 
-    const userId = session?.user?.id;
-    if (!userId) throw new Error('Tidak bisa mendapatkan user ID');
-
-    // 2. Simpan lokal
-    await AsyncStorage.setItem('user_nickname', tempName.trim());
-    await AsyncStorage.setItem('user_avatar', tempAvatar);
-    await AsyncStorage.setItem('user_uuid', userId);
-    setNickname(tempName.trim());
-    setAvatar(tempAvatar);
-
-    // 3. Upsert ke DB - pastikan kolom sesuai schema
-    const { error: upsertError } = await supabase
-      .from('profile')
-      .upsert({
-        id: userId,
-        user_id: userId,
-        nickname: tempName.trim(),
-        is_auth: !!session?.user?.email,// false kalau anonymous
-      }, {
-        onConflict: 'id', // pastikan upsert berdasarkan PK
-      });
-
-    if (upsertError) throw upsertError;
-
-    setModalVisible(false);
-  } catch (error: any) {
-    console.error('Gagal menyimpan profil:', error);
-    Alert.alert('Kesalahan', error.message || 'Gagal menyimpan perubahan');
-  }
-};
-
-  // ── Assesmen State ──────────────────────────────────────────────────────────
+  // ── Assessment State ────────────────────────────────────────────────────────
   const [assesmenSelectedDays, setAssesmenSelectedDays] = useState<DayId[]>([
     'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Ming',
   ]);
   const [assesmenTimes, setAssesmenTimes] = useState<string[]>(['12:00']);
 
-  // ── Modal Tambah Waktu State ────────────────────────────────────────────────
+  // ── Time Picker State ───────────────────────────────────────────────────────
   const [isTimeModalVisible, setTimeModalVisible] = useState<boolean>(false);
-  const [timeTarget, setTimeTarget] = useState<'mood' | 'jurnal' | 'assesmen' | null>(null);
-  
-  // State untuk custom picker (menyerupai image.png)
-  const [pickerHour, setPickerHour] = useState<number>(12);
+  const [timeTarget, setTimeTarget] = useState<
+    'mood' | 'jurnal' | 'assesmen' | null
+  >(null);
+
+  // 24h format: hour 0-23, minute 0-59
+  const [pickerHour, setPickerHour] = useState<number>(13);
   const [pickerMinute, setPickerMinute] = useState<number>(0);
-  const [pickerAmPm, setPickerAmPm] = useState<'AM' | 'PM'>('AM');
   const [pickerMode, setPickerMode] = useState<'hour' | 'minute'>('hour');
 
-  // ── Animasi rotasi jarum jam yang lebih mulus ──────────────────────────────
-  const clockHandAnim = useRef(new Animated.Value(360)).current;
-
-  useEffect(() => {
-    if (isTimeModalVisible) {
-      const targetAngle = pickerMode === 'hour' ? pickerHour * 30 : pickerMinute * 6;
-      Animated.spring(clockHandAnim, {
-        toValue: targetAngle,
-        friction: 8,
-        tension: 50,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [pickerMode, isTimeModalVisible]);
-
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
-  const handleSaveTime = () => {
-    // Konversi AM/PM ke format 24 jam untuk disimpan
-    const h24 = pickerAmPm === 'PM' ? (pickerHour === 12 ? 12 : pickerHour + 12) : (pickerHour === 12 ? 0 : pickerHour);
-    const formattedTime = `${String(h24).padStart(2, '0')}:${String(pickerMinute).padStart(2, '0')}`;
-    
-    if (timeTarget === 'mood') setMoodTimes([...moodTimes, formattedTime]);
-    if (timeTarget === 'jurnal') setJurnalTimes([...jurnalTimes, formattedTime]);
-    if (timeTarget === 'assesmen') setAssesmenTimes([...assesmenTimes, formattedTime]);
-    
-    setTimeModalVisible(false);
+  const handleHourChange = (h: number) => {
+    setPickerHour(h);
   };
 
-  const handleClockTouch = (e: any) => {
-    const { locationX, locationY } = e.nativeEvent;
-    // Titik pusat jam (radius 120 dari kotak 240x240)
-    const cx = 120;
-    const cy = 120;
-    const dx = locationX - cx;
-    const dy = locationY - cy;
-    
-    // Hitung derajat kemiringan (0 derajat di arah jam 12)
-    let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-    if (angle < 0) angle += 360;
+  const handleMinuteChange = (m: number) => {
+    setPickerMinute(m);
+  };
 
-    // Melacak rotasi secara realtime mengikuti sentuhan jari
-    clockHandAnim.setValue(angle);
-
-    if (pickerMode === 'hour') {
-      let h = Math.round(angle / 30);
-      if (h === 0) h = 12;
-      setPickerHour(h);
-    } else {
-      let m = Math.round(angle / 6) % 60;
-      setPickerMinute(m);
-    }
+  const handleClockHourSelect = (h: number) => {
+    setPickerHour(h);
   };
 
   const handleClockRelease = () => {
-    // Efek snap yang mulus ke angka terdekat saat jari dilepas
-    const targetAngle = pickerMode === 'hour' ? pickerHour * 30 : pickerMinute * 6;
-    Animated.spring(clockHandAnim, {
-      toValue: targetAngle,
-      friction: 7,
-      tension: 50,
-      useNativeDriver: true,
-    }).start();
+    // Otomatis pindah ke menit dinonaktifkan, biarkan pengguna tap secara manual
   };
 
-  const toggleDay = (
-    day: DayId,
-    setter: React.Dispatch<React.SetStateAction<DayId[]>>,
-    current: DayId[],
-  ) => {
-    setter(
-      current.includes(day)
-        ? current.filter((d) => d !== day)
-        : [...current, day],
-    );
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  const handleToggleNotif = async () => {
+    const newVal = !notifEnabled;
+    setNotifEnabled(newVal);
+    await saveAndSyncNotifications({ notifEnabled: newVal });
   };
 
-  const handleAssesmenToggleDay = (day: DayId) =>
-    toggleDay(day, setAssesmenSelectedDays, assesmenSelectedDays);
+  const handleSaveTime = async () => {
+    const formattedTime = `${String(pickerHour).padStart(2, '0')}:${String(pickerMinute).padStart(2, '0')}`;
 
-  // Fungsi logout yang tersambung dengan Supabase
+    if (timeTarget === 'mood') {
+      const newTimes = [...moodTimes, formattedTime];
+      setMoodTimes(newTimes);
+      await saveAndSyncNotifications({ moodTimes: newTimes });
+    }
+    if (timeTarget === 'jurnal') {
+      const newTimes = [...jurnalTimes, formattedTime];
+      setJurnalTimes(newTimes);
+      await saveAndSyncNotifications({ jurnalTimes: newTimes });
+    }
+    if (timeTarget === 'assesmen') {
+      const newTimes = [...assesmenTimes, formattedTime];
+      setAssesmenTimes(newTimes);
+      await saveAndSyncNotifications({ assesmenTimes: newTimes });
+    }
+
+    setTimeModalVisible(false);
+  };
+
+  const handleRemoveMoodTime = async (idx: number) => {
+    const newTimes = moodTimes.filter((_, i) => i !== idx);
+    setMoodTimes(newTimes);
+    await saveAndSyncNotifications({ moodTimes: newTimes });
+  };
+
+  const handleRemoveJurnalTime = async (idx: number) => {
+    const newTimes = jurnalTimes.filter((_, i) => i !== idx);
+    setJurnalTimes(newTimes);
+    await saveAndSyncNotifications({ jurnalTimes: newTimes });
+  };
+
+  const handleRemoveAssesmenTime = async (idx: number) => {
+    const newTimes = assesmenTimes.filter((_, i) => i !== idx);
+    setAssesmenTimes(newTimes);
+    await saveAndSyncNotifications({ assesmenTimes: newTimes });
+  };
+
+  const handleAssesmenToggleDay = async (day: DayId) => {
+    const newDays = assesmenSelectedDays.includes(day)
+      ? assesmenSelectedDays.filter((d) => d !== day)
+      : [...assesmenSelectedDays, day];
+    setAssesmenSelectedDays(newDays);
+    await saveAndSyncNotifications({ assesmenDays: newDays });
+  };
+
+  const openTimePicker = (target: 'mood' | 'jurnal' | 'assesmen') => {
+    setTimeTarget(target);
+    setPickerHour(13);
+    setPickerMinute(0);
+    setPickerMode('hour');
+    setTimeModalVisible(true);
+  };
+
   const handleLogout = async () => {
     if (onLogout) {
       onLogout();
@@ -398,10 +688,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        backgroundColor={colors.canvas}
-        barStyle="dark-content"
-      />
+      <StatusBar style="dark" backgroundColor={colors.canvas} />
 
       {/* Top App Bar */}
       <View style={styles.header}>
@@ -417,7 +704,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
 
         <Text style={styles.headerTitle}>Pengaturan</Text>
 
-        {/* Spacer to balance and centre the title */}
         <View style={styles.headerSpacer} />
       </View>
 
@@ -430,31 +716,44 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
       >
         {/* ── Profil ──────────────────────────────────────────────────────── */}
         <View style={[styles.card, styles.akunCard, { paddingRight: 64 }]}>
-          <View style={[styles.profilDetails, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+          <View
+          style={[styles.profilDetails, styles.profilDetailsRow]}
+          >
             <Image
-              source={AVATARS.find((a) => a.id === avatar)?.source || AVATARS[0].source}
-              style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.surfaceVariant }}
+              source={
+                AVATARS.find((a) => a.id === avatar)?.source ||
+                AVATARS[0].source
+              }
+            style={styles.profilAvatar}
               contentFit="cover"
             />
-            <View style={{ flex: 1, gap: 12 }}>
+          <View style={styles.profilInfo}>
               <View style={styles.profilRow}>
                 <Icon name="person" size={20} color={colors.inkSoft} />
-                <Text style={styles.profilText}>{nickname || 'Belum diatur'}</Text>
+                <Text style={styles.profilText}>
+                  {nickname || 'Belum diatur'}
+                </Text>
               </View>
               <View style={styles.profilRow}>
                 <Icon name="email" size={20} color={colors.inkSoft} />
                 {sessionEmail ? (
                   <Text style={styles.profilText}>{sessionEmail}</Text>
                 ) : (
-                  <TouchableOpacity onPress={() => router.push('/b-login')} activeOpacity={0.7}>
-                    <Text style={[styles.profilText, { color: colors.accentBlue, fontFamily: 'Fredoka_700Bold' }]}>Masuk akun</Text>
+                  <TouchableOpacity
+                    onPress={() => router.push('/b-login')}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                  style={[styles.profilText, styles.profilTextLink]}
+                    >
+                      Masuk akun
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
             </View>
           </View>
 
-          {/* Tombol Edit Profil di Kanan Bawah */}
           <TouchableOpacity
             style={styles.editProfileBtn}
             onPress={() => {
@@ -469,124 +768,101 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* ── Notifikasi ──────────────────────────────────────────────────── */}
+        {/* ── Notifikasi Toggle ────────────────────────────────────────────── */}
         <View style={[styles.card, styles.notifikasiCard]}>
           <Text style={styles.cardTitle}>Notifikasi</Text>
-          <MushroomToggle value={notifEnabled} onToggle={() => setNotifEnabled(!notifEnabled)} />
+          <MushroomToggle value={notifEnabled} onToggle={handleToggleNotif} />
         </View>
 
+        {/* ── Jadwal Notifikasi ────────────────────────────────────────────── */}
         <View
           style={[!notifEnabled && styles.disabledSection]}
           pointerEvents={notifEnabled ? 'auto' : 'none'}
         >
-          {/* ── Trak Mood ───────────────────────────────────────────────────── */}
           <SectionSchedule
             title="Trak Mood"
             times={moodTimes}
-            onAddTime={() => {
-              setTimeTarget('mood');
-              setPickerHour(12);
-              setPickerMinute(0);
-              setPickerAmPm('AM');
-              setPickerMode('hour');
-              clockHandAnim.setValue(360);
-              setTimeModalVisible(true);
-            }}
-            onRemoveTime={(idx) => {
-              const newTimes = [...moodTimes];
-              newTimes.splice(idx, 1);
-              setMoodTimes(newTimes);
-            }}
+            onAddTime={() => openTimePicker('mood')}
+            onRemoveTime={handleRemoveMoodTime}
           />
 
-          {/* ── Jurnal Harian ───────────────────────────────────────────────── */}
           <SectionSchedule
             title="Jurnal Harian"
             times={jurnalTimes}
-            onAddTime={() => {
-              setTimeTarget('jurnal');
-              setPickerHour(12);
-              setPickerMinute(0);
-              setPickerAmPm('AM');
-              setPickerMode('hour');
-              clockHandAnim.setValue(360);
-              setTimeModalVisible(true);
-            }}
-            onRemoveTime={(idx) => {
-              const newTimes = [...jurnalTimes];
-              newTimes.splice(idx, 1);
-              setJurnalTimes(newTimes);
-            }}
+            onAddTime={() => openTimePicker('jurnal')}
+            onRemoveTime={handleRemoveJurnalTime}
           />
 
-          {/* ── Self Assessment ─────────────────────────────────────────────── */}
           <SectionSchedule
             title="Self Assessment"
             days={ALL_DAYS}
             selectedDays={assesmenSelectedDays}
             onToggleDay={handleAssesmenToggleDay}
             times={assesmenTimes}
-            onAddTime={() => {
-              setTimeTarget('assesmen');
-              setPickerHour(12);
-              setPickerMinute(0);
-              setPickerAmPm('AM');
-              setPickerMode('hour');
-              clockHandAnim.setValue(360);
-              setTimeModalVisible(true);
-            }}
-            onRemoveTime={(idx) => {
-              const newTimes = [...assesmenTimes];
-              newTimes.splice(idx, 1);
-              setAssesmenTimes(newTimes);
-            }}
+            onAddTime={() => openTimePicker('assesmen')}
+            onRemoveTime={handleRemoveAssesmenTime}
           />
         </View>
 
-        {/* ── Logout & Hapus Data ─────────────────────────────────────────── */}
+        {/* ── Logout ──────────────────────────────────────────────────────── */}
         <View style={styles.logoutContainer}>
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleLogout}
-            style={[styles.akunButton, { backgroundColor: colors.accentRed }]}
+          style={[styles.akunButton, styles.akunButtonLogout]}
             accessibilityRole="button"
             accessibilityLabel="Keluar dari akun"
           >
-            <Text style={[styles.akunButtonText, { color: colors.ink }]}>Keluar</Text>
+          <Text style={styles.akunButtonText}>
+              Keluar
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* ── Modal Edit Nama ──────────────────────────────────────────────── */}
-      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
+      {/* ── Modal Edit Profil ────────────────────────────────────────────── */}
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+          <View
+            style={styles.modalCard}
+            onStartShouldSetResponder={() => true}
+          >
             <View style={[styles.modalTextGroup, { marginBottom: 16 }]}>
               <Text style={styles.modalTitle}>Ubah Profil</Text>
               <Text style={styles.modalBody}>
                 Pilih avatar dan nama panggilan barumu
               </Text>
             </View>
-            
-            {/* ── Avatar Selection Grid ── */}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+
+            <View
+              style={styles.avatarGrid}
+            >
               {AVATARS.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.8}
                   onPress={() => setTempAvatar(item.id)}
-                  style={{
-                    width: 60, height: 60, borderRadius: 30, padding: 3,
-                    borderWidth: 3, borderColor: tempAvatar === item.id ? colors.ink : 'transparent',
-                  }}
+                  style={[
+                    styles.avatarOption,
+                    tempAvatar === item.id && styles.avatarOptionSelected,
+                  ]}
                 >
-                  <Image source={item.source} style={{ width: '100%', height: '100%', borderRadius: 999 }} contentFit="cover" />
+                  <Image
+                    source={item.source}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                  />
                 </TouchableOpacity>
               ))}
             </View>
 
             <TextInput
-              style={[styles.textInput, { width: '100%', textAlign: 'center', marginBottom: 16 }]}
+              style={[styles.textInput, styles.profilInput]}
               placeholder="Masukkan panggilan..."
               placeholderTextColor={colors.inkSoft}
               value={tempName}
@@ -595,14 +871,18 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
             />
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalBtnExit, { flex: 1, backgroundColor: colors.surfaceVariant }]}
+                style={[styles.modalBtnExit, styles.modalBtnCancel]}
                 onPress={() => setModalVisible(false)}
                 activeOpacity={0.8}
               >
                 <Text style={styles.modalBtnText}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtnContinue, { flex: 1, backgroundColor: colors.accentGreen, opacity: tempName.trim() ? 1 : 0.5 }]}
+                style={[
+                  styles.modalBtnContinue,
+                  styles.modalBtnSave,
+                  { opacity: tempName.trim() ? 1 : 0.5 },
+                ]}
                 onPress={handleSaveName}
                 activeOpacity={0.8}
                 disabled={!tempName.trim()}
@@ -614,113 +894,120 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         </View>
       </Modal>
 
-      {/* ── Custom Time Picker Modal (Ala image.png) ──────────────────────── */}
-      <Modal visible={isTimeModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
+      {/* ── Material 24h Time Picker Modal ──────────────────────────────── */}
+      <Modal
+        visible={isTimeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTimeModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.tpCard} onStartShouldSetResponder={() => true}>
-            <Text style={styles.tpHeader}>PILIH WAKTU</Text>
-
-            {/* ── Digital Display & AM/PM ── */}
-            <View style={styles.tpDigitalRow}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setPickerMode('hour')}
-                style={[styles.tpTimeBox, pickerMode === 'hour' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive]}
+          <View
+            style={[styles.modalCard, styles.modalCardNoPadding]}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Header banner */}
+            <View
+              style={styles.tpModalHeader}
+            >
+              <Text
+                style={styles.tpModalTitle}
               >
-                <Text style={[styles.tpTimeText, pickerMode !== 'hour' && { color: colors.inkSoft }]}>
-                  {String(pickerHour).padStart(2, '0')}
-                </Text>
-              </TouchableOpacity>
-
-              <Text style={styles.tpColon}>:</Text>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setPickerMode('minute')}
-                style={[styles.tpTimeBox, pickerMode === 'minute' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive]}
-              >
-                <Text style={[styles.tpTimeText, pickerMode !== 'minute' && { color: colors.inkSoft }]}>
-                  {String(pickerMinute).padStart(2, '0')}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.tpAmPmCol}>
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('AM')} style={[styles.tpAmPmBtn, pickerAmPm === 'AM' && styles.tpAmPmBtnActive]}>
-                  <Text style={[styles.tpAmPmText, pickerAmPm === 'AM' && styles.tpAmPmTextActive]}>AM</Text>
-                </TouchableOpacity>
-                <View style={styles.tpAmPmDivider} />
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setPickerAmPm('PM')} style={[styles.tpAmPmBtn, pickerAmPm === 'PM' && styles.tpAmPmBtnActive]}>
-                  <Text style={[styles.tpAmPmText, pickerAmPm === 'PM' && styles.tpAmPmTextActive]}>PM</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* ── Analog Clock Face ── */}
-            <View style={styles.tpClockContainer}>
+                PILIH WAKTU
+              </Text>
               <View
-                style={styles.tpClockFace}
-                onStartShouldSetResponder={() => true}
-                onResponderGrant={handleClockTouch}
-                onResponderMove={handleClockTouch}
-                onResponderRelease={handleClockRelease}
+                style={styles.tpDigitalContainer}
               >
-                {/* Angka Jam / Menit */}
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => {
-                  const angle = (h * 30 * Math.PI) / 180;
-                  const radius = 96; // Jarak angka dari pusat
-                  const x = 120 - 15 + radius * Math.sin(angle);
-                  const y = 120 - 15 - radius * Math.cos(angle);
-                  const label = pickerMode === 'hour' ? h : (h === 12 ? '00' : h * 5);
-                  return (
-                    <Text key={h} style={[styles.tpClockNumber, { left: x, top: y }]}>
-                      {label}
-                    </Text>
-                  );
-                })}
-
-                {/* Jarum Jam */}
-                <Animated.View
+                {/* Hour */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setPickerMode('hour')}
                   style={[
-                    styles.tpClockHandWrapper,
-                    {
-                      transform: [
-                        {
-                          rotate: clockHandAnim.interpolate({
-                            inputRange: [0, 360],
-                            outputRange: ['0deg', '360deg'],
-                          }),
-                        },
-                      ],
-                    },
+                    styles.tpTimeBox,
+                    pickerMode === 'hour' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive,
                   ]}
-                  pointerEvents="none"
                 >
-                  <View style={styles.tpClockHandLine} />
-                  <View style={styles.tpClockHandCircle}>
-                    <Text style={styles.tpClockHandText}>
-                      {pickerMode === 'hour' ? pickerHour : pickerMinute}
-                    </Text>
-                  </View>
-                  <View style={styles.tpClockHandDot} />
-                </Animated.View>
+                  <Text
+                    style={[
+                      styles.tpTimeText,
+                      pickerMode !== 'hour' && styles.tpTimeTextInactive,
+                    ]}
+                  >
+                    {String(pickerHour).padStart(2, '0')}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text
+                  style={styles.tpColon}
+                >
+                  :
+                </Text>
+
+                {/* Minute */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setPickerMode('minute')}
+                  style={[
+                    styles.tpTimeBox,
+                    pickerMode === 'minute' ? styles.tpTimeBoxActive : styles.tpTimeBoxInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.tpTimeText,
+                      pickerMode !== 'minute' && styles.tpTimeTextInactive,
+                    ]}
+                  >
+                    {String(pickerMinute).padStart(2, '0')}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            {/* ── Footer ── */}
-            <View style={styles.tpFooter}>
-              <TouchableOpacity
-                style={styles.tpBtnCancel}
-                onPress={() => setTimeModalVisible(false)}
+            {/* Clock body */}
+            <View
+              style={styles.tpClockBody}
+            >
+              <View
+                style={styles.tpClockContainerWrapper}
               >
-                <Text style={styles.tpBtnCancelText}>BATAL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.tpBtnOk}
-                onPress={handleSaveTime}
-                activeOpacity={0.8}
+                <ClockFace
+                  mode={pickerMode}
+                  hour={pickerHour}
+                  minute={pickerMinute}
+                  onHourChange={handleClockHourSelect}
+                  onMinuteChange={handleMinuteChange}
+                  onRelease={handleClockRelease}
+                />
+              </View>
+
+              {/* Footer */}
+              <View
+                style={styles.tpFooter}
               >
-                <Text style={styles.tpBtnOkText}>OKE</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.tpBtnCancel}
+                  onPress={() => setTimeModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={styles.tpBtnCancelText}
+                  >
+                    BATAL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.tpBtnOk}
+                  onPress={handleSaveTime}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={styles.tpBtnOkText}
+                  >
+                    OKE
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
