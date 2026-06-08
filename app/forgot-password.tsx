@@ -1,8 +1,9 @@
+// forgot-password.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ImageBackground,
   Pressable,
@@ -18,83 +19,93 @@ import { colors, styles } from './styles';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ 
-    code?: string; 
-    access_token?: string; 
-    error_description?: string; 
-  }>();
   const insets = useSafeAreaInsets();
-  
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
   const [inputFocused, setInputFocused] = useState('');
 
+  // FIX: Pakai ref untuk mencegah deep link diproses lebih dari sekali
+  const hasProcessedLink = useRef(false);
   const url = Linking.useURL();
 
-  // Memantau deep link jika user mengklik link dari email
-  // Destructure parameter untuk dipakai dengan aman di dalam dependency array
-  const { code, access_token} = params;
-
   useEffect(() => {
-    if (step === 3) return; // Mencegah reset form jika sudah berhasil
+    // Jangan proses kalau sudah di step 3, atau link sudah pernah diproses
+    if (step === 3 || hasProcessedLink.current || !url) return;
+
+    // Jangan proses URL awal app (bukan dari reset password)
+    if (!url.includes('access_token') && !url.includes('code') && !url.includes('type=recovery')) return;
 
     const handleDeepLink = async () => {
-      let allParams: Record<string, string> = {} as any;
-      
-      if (url) {
-        try {
-          const parsed = Linking.parse(url);
-          if (parsed.queryParams) {
-            allParams = { ...allParams, ...parsed.queryParams } as any;
-          }
-          
-          const hashSplit = url.split('#');
-          if (hashSplit.length > 1) {
-            const hashStr = hashSplit[1].replace('?', '&'); 
-            const hashParams = hashStr.split('&');
-            for (const param of hashParams) {
-              const [key, val] = param.split('=');
+      hasProcessedLink.current = true;
+
+      // FIX: Parse hash fragment dengan benar
+      // Supabase kirim token di hash: myapp://forgot-password#access_token=xxx&refresh_token=yyy&type=recovery
+      let allParams: Record<string, string> = {};
+
+      try {
+        // Parse query params biasa dulu
+        const parsed = Linking.parse(url);
+        if (parsed.queryParams) {
+          allParams = { ...allParams, ...parsed.queryParams } as Record<string, string>;
+        }
+
+        // FIX: Parse hash fragment dengan benar — tidak pakai .replace('?', '&')
+        // karena hash tidak punya '?' di awalnya
+        const hashIndex = url.indexOf('#');
+        if (hashIndex !== -1) {
+          const hashStr = url.substring(hashIndex + 1);
+          const hashParams = hashStr.split('&');
+          for (const param of hashParams) {
+            const eqIndex = param.indexOf('=');
+            if (eqIndex !== -1) {
+              const key = param.substring(0, eqIndex);
+              const val = param.substring(eqIndex + 1);
               if (key && val) allParams[key] = decodeURIComponent(val);
             }
           }
-        } catch (e) {
-          console.error('Error parsing URL:', e);
         }
+      } catch (e) {
+        console.error('Error parsing URL:', e);
       }
 
       if (allParams.error_description) {
-        setErrorMsg(allParams.error_description);
+        setErrorMsg(decodeURIComponent(allParams.error_description.replace(/\+/g, ' ')));
         return;
       }
+
+      // FIX: Cek type=recovery untuk memastikan ini memang link reset password
+      const isRecovery = allParams.type === 'recovery';
 
       if (allParams.code) {
         setLoading(true);
         const { error } = await supabase.auth.exchangeCodeForSession(allParams.code);
         setLoading(false);
-        
+
         if (error) {
           setErrorMsg(error.message);
+          hasProcessedLink.current = false;
         } else {
           setSuccessMsg('Email terverifikasi. Silakan buat password baru Anda.');
           setStep(3);
         }
-      } else if (allParams.access_token && allParams.refresh_token) {
+      } else if (allParams.access_token && allParams.refresh_token && isRecovery) {
         setLoading(true);
         const { error } = await supabase.auth.setSession({
           access_token: allParams.access_token,
           refresh_token: allParams.refresh_token,
         });
         setLoading(false);
-        
+
         if (error) {
           setErrorMsg(error.message);
+          hasProcessedLink.current = false;
         } else {
           setSuccessMsg('Email terverifikasi. Silakan buat password baru Anda.');
           setStep(3);
@@ -102,10 +113,8 @@ export default function ForgotPasswordScreen() {
       }
     };
 
-    if (code || access_token || url) {
-      handleDeepLink();
-    }
-  }, [url, code, access_token, step, params]);
+    handleDeepLink();
+  }, [url, step]);
 
   const handleRequestLink = async () => {
     const emailAddress = email.trim().toLowerCase();
@@ -123,12 +132,12 @@ export default function ForgotPasswordScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(emailAddress, {
         redirectTo: resetRedirectTo,
       });
-      
+
       if (error) {
         setErrorMsg(error.message);
         return;
       }
-      
+
       setSuccessMsg('Link reset password telah dikirim ke email Anda. Silakan cek inbox/spam Anda dan klik link tersebut.');
       setStep(2);
     } catch (err: any) {
@@ -162,12 +171,12 @@ export default function ForgotPasswordScreen() {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
-      
+
       if (error) {
         setErrorMsg(error.message);
         return;
       }
-      
+
       setSuccessMsg('Password berhasil diubah! Anda akan dialihkan ke halaman login...');
       setTimeout(() => {
         router.replace('/login');
@@ -286,7 +295,7 @@ export default function ForgotPasswordScreen() {
                 <Text style={styles.fieldLabel}>Password Baru</Text>
                 <TextInput
                   style={[styles.textInput, inputFocused === 'new' && styles.textInputFocused]}
-                  placeholder="••••••••"
+                  placeholder="Masukkan password baru Anda"
                   placeholderTextColor="rgba(122, 106, 114, 0.6)"
                   secureTextEntry
                   value={newPassword}
@@ -300,7 +309,7 @@ export default function ForgotPasswordScreen() {
                 <Text style={styles.fieldLabel}>Konfirmasi Password</Text>
                 <TextInput
                   style={[styles.textInput, inputFocused === 'confirm' && styles.textInputFocused]}
-                  placeholder="••••••••"
+                  placeholder="Masukkan lagi password baru Anda"
                   placeholderTextColor="rgba(122, 106, 114, 0.6)"
                   secureTextEntry
                   value={confirmPassword}

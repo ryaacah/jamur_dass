@@ -210,7 +210,7 @@ export default function LoginScreen() {
             <View style={{ justifyContent: 'center' }}>
               <TextInput
                 style={[styles.textInput, passwordFocused && styles.textInputFocused, { paddingRight: 50 }]}
-                placeholder="••••••••"
+                placeholder="Masukkan password Anda"
                 placeholderTextColor="rgba(122, 106, 114, 0.6)"
                 secureTextEntry={!showPassword}
                 value={password}
