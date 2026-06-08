@@ -424,12 +424,7 @@ export default function Index() {
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Link href="/inbox" asChild>
-            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button" style={{ position: 'relative' }}>
-              <Icon name="notifications" size={26} color={colors.ink} />
-              {unreadCount > 0 && (
-                <View style={{ position: 'absolute', top: 0, right: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accentRed, borderWidth: 1.5, borderColor: colors.canvas }} />
-              )}
-            </TouchableOpacity>
+            
           </Link>
           <Link href="/settings-notification" asChild>
             <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
