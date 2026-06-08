@@ -1,3 +1,4 @@
+// File: app/login.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -14,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { claimPendingAnonymousData } from '../lib/authDataTransfer';
+import { claimPendingAnonymousData, rememberPendingAnonymousUser } from '../lib/authDataTransfer';
 import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
@@ -34,7 +35,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     const emailAddress = email.trim().toLowerCase();
-    
+
     setErrorMsg('');
     setSuccessMsg('');
     setShowResend(false);
@@ -47,6 +48,14 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
+      // FIX: Simpan anonymous user ID sebelum sign in, sama seperti di b-login.tsx
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user?.is_anonymous) {
+        await rememberPendingAnonymousUser(currentSession.user.id);
+        // Sign out dari sesi anonim sebelum login dengan akun baru
+        await supabase.auth.signOut();
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailAddress,
         password,
@@ -61,7 +70,12 @@ export default function LoginScreen() {
           return;
         }
 
-        setErrorMsg('Email atau password salah. Pastikan email sudah diverifikasi.');
+        if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid credentials')) {
+          setErrorMsg('Email atau password salah. Pastikan email sudah diverifikasi.');
+          return;
+        }
+
+        setErrorMsg(error.message || 'Gagal masuk. Coba lagi.');
         return;
       }
 
@@ -88,6 +102,8 @@ export default function LoginScreen() {
         if (nickname) {
           await AsyncStorage.setItem('user_nickname', nickname);
         }
+
+        await AsyncStorage.setItem('user_uuid', data.user.id);
       }
 
       router.replace('/');
@@ -130,12 +146,13 @@ export default function LoginScreen() {
         resizeMode="cover"
       />
 
+      {/* FIX: Ganti router.push('/') -> router.back() supaya tidak numpuk history */}
       <TouchableOpacity
         style={[
           styles.headerBackBtn,
           { position: 'absolute', top: Math.max(insets.top + 16, 24), left: 16, zIndex: 10 },
         ]}
-        onPress={() => router.push('/')}
+        onPress={() => router.back()}
         accessibilityRole="button"
         accessibilityLabel="Kembali"
       >

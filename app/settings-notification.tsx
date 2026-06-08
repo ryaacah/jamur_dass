@@ -478,10 +478,11 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         const savedAvatar = await AsyncStorage.getItem('user_avatar');
         if (savedAvatar) setAvatar(savedAvatar);
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         if (session) {
+          // tambahkan ini
+          setSessionEmail(session.user.email || null);
+
           const { data: profile } = await supabase
             .from('profile')
             .select('nickname')

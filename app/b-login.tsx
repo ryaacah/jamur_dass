@@ -1,10 +1,15 @@
+// File: app/b-login.tsx
+import { MaterialIcons as Icon } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
 import {
   Alert,
+  Platform,
   Pressable,
   Text,
   View
@@ -12,7 +17,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
-import { styles } from './styles';
+import { colors, styles } from './styles';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const BG_IMAGE = require('../assets/images/bg_splash.png');
 const MASCOT_IMAGE = require('../assets/images/splash_icon.png');
@@ -30,15 +37,126 @@ const WelcomeScreen: React.FC = () => {
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    // FIX: Gunakan path yang konsisten untuk redirect URL
+    // Sebelumnya: Linking.createURL('') — string kosong bisa bermasalah di beberapa device
+    const redirectUrl = Linking.createURL('/');
+
+    // Simpan ID anonim sebelum login jika ada
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (currentSession?.user?.is_anonymous) {
+      const { rememberPendingAnonymousUser } = await import('../lib/authDataTransfer');
+      await rememberPendingAnonymousUser(currentSession.user.id);
+    }
+
+    if (Platform.OS === 'web') {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: Linking.createURL('/'),
+          queryParams: {
+            prompt: 'select_account',
+          }
+        }
+      });
+      if (error) Alert.alert('Gagal', error.message);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: Linking.createURL('/'),
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: true,
       },
     });
 
     if (error) {
       Alert.alert('Gagal', error.message);
+      return;
+    }
+
+    if (data?.url) {
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+      if (res.type === 'success' && res.url) {
+        let allParams: Record<string, string> = {};
+        try {
+          const parsed = Linking.parse(res.url);
+          if (parsed.queryParams) {
+            allParams = { ...allParams, ...parsed.queryParams } as any;
+          }
+
+          const hashSplit = res.url.split('#');
+          if (hashSplit.length > 1) {
+            const hashStr = hashSplit[1].replace('?', '&');
+            const hashParams = hashStr.split('&');
+            for (const param of hashParams) {
+              const [key, val] = param.split('=');
+              if (key && val) allParams[key] = decodeURIComponent(val);
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing URL:', e);
+        }
+
+        if (allParams.access_token && allParams.refresh_token) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: allParams.access_token,
+            refresh_token: allParams.refresh_token,
+          });
+
+          if (sessionError) {
+            Alert.alert('Gagal', sessionError.message);
+            return;
+          }
+
+          // Claim data anonim
+          try {
+            const { claimPendingAnonymousData } = await import('../lib/authDataTransfer');
+            await claimPendingAnonymousData();
+          } catch (e) {
+            console.error('Gagal claim anonymous data:', e);
+          }
+
+          // Sync profil ke database
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              const localNickname = await AsyncStorage.getItem('user_nickname');
+
+              const { data: existingProfile } = await supabase
+                .from('profile')
+                .select('nickname')
+                .eq('id', session.user.id)
+                .maybeSingle();
+
+              const nickname = existingProfile?.nickname || localNickname || null;
+
+              await supabase.from('profile').upsert({
+                id: session.user.id,
+                user_id: session.user.id,
+                email: session.user.email,
+                nickname: nickname,
+                is_auth: true,
+              }, { onConflict: 'id' });
+
+              if (nickname) {
+                await AsyncStorage.setItem('user_nickname', nickname);
+              }
+              await AsyncStorage.setItem('user_uuid', session.user.id);
+            }
+          } catch (e) {
+            console.error('Gagal sync profil:', e);
+          }
+
+          router.replace('/');
+        } else {
+          Alert.alert('Gagal', 'Tidak bisa mendapatkan token dari Google.');
+        }
+      } else if (res.type === 'cancel' || res.type === 'dismiss') {
+        // FIX: Tambah handling kalau user cancel — sebelumnya silent
+        console.log('Google login dibatalkan user.');
+      }
     }
   };
 
@@ -99,7 +217,7 @@ const WelcomeScreen: React.FC = () => {
             ]}
             onPress={handleEmailLogin}
           >
-            <Text style={styles.emailIcon}>✉️</Text>
+            <Icon name="email" size={20} color={colors.ink} style={{ marginRight: 8 }} />
             <Text style={styles.primaryButtonText}>Masuk dengan Email</Text>
           </Pressable>
         </View>

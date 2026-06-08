@@ -1,3 +1,4 @@
+// authDataTransfer.ts
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from './supabase'
 

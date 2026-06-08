@@ -1,3 +1,4 @@
+// File: app/register.tsx  ← FIX: nama file typo "resgister" -> "register"
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -38,7 +39,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     const emailAddress = email.trim().toLowerCase();
-    
+
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -78,7 +79,8 @@ export default function RegisterScreen() {
       if (error) {
         if (
           error.message.toLowerCase().includes('already registered') ||
-          error.message.toLowerCase().includes('already in use')
+          error.message.toLowerCase().includes('already in use') ||
+          error.message.toLowerCase().includes('user already registered')
         ) {
           setErrorMsg('Email ini sudah terdaftar. Silakan masuk.');
         } else {
@@ -87,15 +89,21 @@ export default function RegisterScreen() {
         return;
       }
 
-      if (data?.user && data.session) {
-        await claimPendingAnonymousData();
-        await supabase.from('profile').upsert({
-          id: data.user.id,
-          user_id: data.user.id,
-          email: data.user.email ?? emailAddress,
-          nickname: localNickname ?? null,
-          is_auth: true,
-        }, { onConflict: 'id' });
+      // FIX: Tambah pengecekan — Supabase kadang return user tapi session null
+      // kalau email confirmation diaktifkan. Ini bukan error, justru flow yang benar.
+      if (data?.user) {
+        if (data.session) {
+          // Langsung aktif (email confirmation dimatikan di Supabase)
+          await claimPendingAnonymousData();
+          await supabase.from('profile').upsert({
+            id: data.user.id,
+            user_id: data.user.id,
+            email: data.user.email ?? emailAddress,
+            nickname: localNickname ?? null,
+            is_auth: true,
+          }, { onConflict: 'id' });
+        }
+        // Kalau session null = butuh verifikasi email, tetap lanjut ke pesan sukses
       }
 
       setSuccessMsg('Akun berhasil dibuat! Cek emailmu untuk verifikasi, lalu masuk.');
@@ -121,12 +129,14 @@ export default function RegisterScreen() {
         resizeMode="cover"
       />
 
+      {/* FIX: Ganti router.replace('/login') -> router.back()
+          User bisa datang dari b-login atau login, jadi back() lebih aman */}
       <TouchableOpacity
         style={[
           styles.headerBackBtn,
           { position: 'absolute', top: Math.max(insets.top + 16, 24), left: 16, zIndex: 10 },
         ]}
-        onPress={() => router.replace('/login')}
+        onPress={() => router.back()}
         accessibilityRole="button"
         accessibilityLabel="Kembali"
       >

@@ -12,6 +12,9 @@ import { Stack } from 'expo-router';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import SplashScreen from './splash-screen';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 
 ExpoSplashScreen.preventAutoHideAsync();
 
@@ -21,6 +24,44 @@ function isExpoGo(): boolean {
 }
 
 export default function RootLayout() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        try {
+          const { data: existingProfile } = await supabase
+            .from('profile')
+            .select('nickname')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          const localNickname = await AsyncStorage.getItem('user_nickname');
+          const nickname = existingProfile?.nickname || localNickname || null;
+
+          await supabase.from('profile').upsert({
+            id: session.user.id,
+            user_id: session.user.id,
+            email: session.user.email,
+            nickname: nickname,
+            is_auth: !!session.user.email,
+          }, { onConflict: 'id' });
+
+          if (session.user.email) {
+            await AsyncStorage.setItem('user_uuid', session.user.id);
+            if (nickname) {
+              await AsyncStorage.setItem('user_nickname', nickname);
+            }
+          }
+        } catch (e) {
+          console.error('Gagal sync profil:', e);
+        }
+        router.replace('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   const [showSplash, setShowSplash] = useState(true);
   const [fontsLoaded, fontError] = useFonts({
     Fredoka_300Light,
