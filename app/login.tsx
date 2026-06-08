@@ -29,6 +29,7 @@ export default function LoginScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [showResend, setShowResend] = useState(false);
@@ -206,16 +207,26 @@ export default function LoginScreen() {
 
           <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
             <Text style={styles.fieldLabel}>Password</Text>
-            <TextInput
-              style={[styles.textInput, passwordFocused && styles.textInputFocused]}
-              placeholder="••••••••"
-              placeholderTextColor="rgba(122, 106, 114, 0.6)"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-            />
+            <View style={{ justifyContent: 'center' }}>
+              <TextInput
+                style={[styles.textInput, passwordFocused && styles.textInputFocused, { paddingRight: 50 }]}
+                placeholder="••••••••"
+                placeholderTextColor="rgba(122, 106, 114, 0.6)"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 16, height: '100%', justifyContent: 'center' }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+              >
+                <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="rgba(122, 106, 114, 0.6)" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={{ alignItems: 'flex-end', marginBottom: 20 }}>

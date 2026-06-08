@@ -24,11 +24,16 @@ function isExpoGo(): boolean {
 }
 
 export default function RootLayout() {
+  // FIX: router masih ada tapi tidak dipakai untuk navigasi di sini
   const router = useRouter();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // FIX: Hanya sync profil saja di sini
+        // Navigasi (router.replace('/')) DIHAPUS dari sini
+        // karena sudah ditangani di masing-masing screen (b-login, login)
+        // Double router.replace menyebabkan timing issue & harus tutup/buka app
         try {
           const { data: existingProfile } = await supabase
             .from('profile')
@@ -56,12 +61,12 @@ export default function RootLayout() {
         } catch (e) {
           console.error('Gagal sync profil:', e);
         }
-        router.replace('/');
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
   const [showSplash, setShowSplash] = useState(true);
   const [fontsLoaded, fontError] = useFonts({
     Fredoka_300Light,
