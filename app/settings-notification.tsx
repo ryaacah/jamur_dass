@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   Modal,
+  PanResponder,
   ScrollView,
   Text,
   TextInput,
@@ -50,11 +51,12 @@ interface SectionScheduleProps {
 const ALL_DAYS: DayId[] = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Ming'];
 
 const CLOCK_SIZE = 256;
-const CLOCK_CENTER = CLOCK_SIZE / 2; // 128
+const CLOCK_CENTER = CLOCK_SIZE / 2;
 const OUTER_RADIUS = 96;
 const INNER_RADIUS = 60;
 const NUM_SIZE_OUTER = 36;
 const NUM_SIZE_INNER = 28;
+const RING_THRESHOLD = (OUTER_RADIUS + INNER_RADIUS) / 2;
 
 // ─── Daftar Opsi Avatar ───────────────────────────────────────────────────────
 const AVATARS = [
@@ -68,7 +70,6 @@ const AVATARS = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-// ─── Custom Mushroom Toggle ───────────────────────────────────────────────────
 interface MushroomFaceProps {
   isOn: boolean;
 }
@@ -183,7 +184,7 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
             name="close"
             size={16}
             color={colors.inkSoft}
-        style={styles.timeChipIcon}
+            style={styles.timeChipIcon}
           />
         </TouchableOpacity>
       ))}
@@ -201,212 +202,171 @@ const SectionSchedule: React.FC<SectionScheduleProps> = ({
   </View>
 );
 
-// ─── Material 24h Clock Face ──────────────────────────────────────────────────
+// ─── ClockFace (fixed) ────────────────────────────────────────────────────────
+
+function getHandPosition(mode: 'hour' | 'minute', hour: number, minute: number) {
+  let angle: number;
+  let radius: number;
+
+  if (mode === 'hour') {
+    const isInner = hour === 0 || hour > 12;
+    radius = isInner ? INNER_RADIUS : OUTER_RADIUS;
+    const h12 = hour % 12;
+    angle = (h12 / 12) * 360 - 90;
+  } else {
+    radius = OUTER_RADIUS;
+    angle = (minute / 60) * 360 - 90;
+  }
+
+  const rad = (angle * Math.PI) / 180;
+  return {
+    x: CLOCK_CENTER + radius * Math.cos(rad),
+    y: CLOCK_CENTER + radius * Math.sin(rad),
+  };
+}
+
+function positionToValue(
+  mode: 'hour' | 'minute',
+  dx: number,
+  dy: number,
+  dist: number,
+): number {
+  let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+  if (angle < 0) angle += 360;
+  if (angle >= 360) angle -= 360;
+
+  if (mode === 'hour') {
+    const useInner = dist < RING_THRESHOLD;
+    let h = Math.round(angle / 30) % 12;
+    if (useInner) {
+      h = h === 0 ? 0 : h + 12;
+    } else {
+      h = h === 0 ? 12 : h;
+    }
+    return h;
+  } else {
+    return Math.round(angle / 6) % 60;
+  }
+}
 
 interface ClockFaceProps {
   mode: 'hour' | 'minute';
-  hour: number;    // 0-23
-  minute: number;  // 0-59
+  hour: number;
+  minute: number;
   onHourChange: (h: number) => void;
   onMinuteChange: (m: number) => void;
   onRelease?: () => void;
 }
 
-function calcAngle(mode: 'hour' | 'minute', hour: number, minute: number): number {
-  return mode === 'hour' ? ((hour % 12) / 12) * 360 : (minute / 60) * 360;
-}
-
-function calcLength(mode: 'hour' | 'minute', hour: number): number {
-  return mode === 'hour' && (hour === 0 || hour > 12) ? INNER_RADIUS : OUTER_RADIUS;
-}
-
-// Hitung koordinat (x,y) ujung jarum dari sudut akumulatif + panjang
-function angleToXY(accAngle: number, length: number): { x: number; y: number } {
-  const rad = ((accAngle - 90) * Math.PI) / 180;
-  return {
-    x: CLOCK_CENTER + length * Math.cos(rad),
-    y: CLOCK_CENTER + length * Math.sin(rad),
-  };
-}
-
-// AnimatedLine & AnimatedCircle: wrap SVG elements supaya bisa pakai Animated.Value
-const AnimatedLine = Animated.createAnimatedComponent(Line as any);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle as any);
-
 function ClockFace({ mode, hour, minute, onHourChange, onMinuteChange, onRelease }: ClockFaceProps) {
-  // accAngle: sudut akumulatif, TIDAK di-clamp ke 0-360.
-  // Ini ref JS biasa (bukan Animated) — hanya untuk menghitung target delta.
-  const accAngle = useRef<number>(calcAngle(mode, hour, minute));
+  const containerRef = useRef<View>(null);
+  const layoutOffset = useRef({ x: 0, y: 0 });
 
-  // Animated.Value untuk koordinat langsung — TIDAK pakai useNativeDriver
-  // karena SVG props bukan native props, tapi ini tetap lebih smooth dari
-  // setState karena tidak trigger React reconciliation tiap frame.
-  const animX = useRef(new Animated.Value(
-    angleToXY(accAngle.current, calcLength(mode, hour)).x
-  )).current;
-  const animY = useRef(new Animated.Value(
-    angleToXY(accAngle.current, calcLength(mode, hour)).y
-  )).current;
-
-  // Untuk hapus animasi sebelumnya
-  const runningAnim = useRef<Animated.CompositeAnimation | null>(null);
-
-  useEffect(() => {
-    const targetAngle = calcAngle(mode, hour, minute);
-    const targetLen   = calcLength(mode, hour);
-
-    // Delta terpendek — tidak pernah lompat > 180°
-    let delta = targetAngle - (accAngle.current % 360);
-    if (delta > 180)  delta -= 360;
-    if (delta < -180) delta += 360;
-    const finalAngle = accAngle.current + delta;
-
-    // Hitung target (x,y) dari finalAngle + targetLen
-    const { x: targetX, y: targetY } = angleToXY(finalAngle, targetLen);
-
-    // Stop animasi sebelumnya
-    if (runningAnim.current) runningAnim.current.stop();
-
-    // Jalankan animasi koordinat (bukan rotasi) menggunakan spring RN
-    // Spring terasa lebih natural di sentuhan dibanding timing
-    runningAnim.current = Animated.parallel([
-      Animated.spring(animX, {
-        toValue: targetX,
-        useNativeDriver: false, // SVG props tidak support native driver
-        speed: 20,
-        bounciness: 3,
-      }),
-      Animated.spring(animY, {
-        toValue: targetY,
-        useNativeDriver: false,
-        speed: 20,
-        bounciness: 3,
-      }),
-    ]);
-    runningAnim.current.start(({ finished }) => {
-      // Update accAngle hanya setelah animasi selesai agar delta berikutnya benar
-      if (finished) {
-        accAngle.current = finalAngle;
-      }
-    });
-
-    return () => {
-      if (runningAnim.current) runningAnim.current.stop();
-    };
-  }, [mode, hour, minute, animX, animY]);
-
-  const handleTouch = (e: any) => {
-    const { locationX, locationY } = e.nativeEvent;
-    const dx = locationX - CLOCK_CENTER;
-    const dy = locationY - CLOCK_CENTER;
+  const handleValue = (pageX: number, pageY: number) => {
+    const dx = pageX - layoutOffset.current.x - CLOCK_CENTER;
+    const dy = pageY - layoutOffset.current.y - CLOCK_CENTER;
     const dist = Math.sqrt(dx * dx + dy * dy);
-
-    let angle = (Math.atan2(dx, -dy) * 180) / Math.PI;
-    if (angle < 0) angle += 360;
-
+    const value = positionToValue(mode, dx, dy, dist);
     if (mode === 'hour') {
-      let h = Math.round(angle / 30) % 12;
-      const useInner = dist < (OUTER_RADIUS + INNER_RADIUS) / 2;
-      if (useInner) {
-        h = h === 0 ? 0 : h + 12;
-      } else {
-        if (h === 0) h = 12;
-      }
-      onHourChange(h);
+      onHourChange(value);
     } else {
-      const m = Math.round(angle / 6) % 60;
-      onMinuteChange(m);
+      onMinuteChange(value);
     }
   };
 
-  // Outer ring: 12, 1, 2, ..., 11
-  const outerNums = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-  // Inner ring: 00, 13, 14, ..., 23
-  const innerNums = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e) => {
+        handleValue(e.nativeEvent.pageX, e.nativeEvent.pageY);
+      },
+      onPanResponderMove: (e) => {
+        handleValue(e.nativeEvent.pageX, e.nativeEvent.pageY);
+      },
+      onPanResponderRelease: () => {
+        if (onRelease) onRelease();
+      },
+    })
+  ).current;
 
+  const handPos = getHandPosition(mode, hour, minute);
+  const outerNums = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  const innerNums = [0, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
   const isInnerSelected = mode === 'hour' && (hour === 0 || hour > 12);
 
   return (
     <View
-      style={styles.tpClockFace}
-      onStartShouldSetResponder={() => true}
-      onResponderGrant={handleTouch}
-      onResponderMove={handleTouch}
-      onResponderRelease={() => {
-        if (onRelease) onRelease();
+      ref={containerRef}
+      style={{
+        width: CLOCK_SIZE,
+        height: CLOCK_SIZE,
+        position: 'relative',
+        backgroundColor: '#F5F0EA',
+        borderRadius: CLOCK_SIZE / 2,
       }}
+      onLayout={() => {
+        containerRef.current?.measure((_x, _y, _w, _h, pageX, pageY) => {
+          layoutOffset.current = { x: pageX, y: pageY };
+        });
+      }}
+      {...panResponder.panHandlers}
     >
-      {/* ── Jarum jam: Animated SVG dengan koordinat langsung ─────────────
-          - Tidak ada transform/rotate → tidak ada masalah inputRange
-          - Tidak ada setState di loop → tidak ada re-render tiap frame
-          - animX/animY dikontrol Animated.spring RN → smooth di native */}
       <Svg
         width={CLOCK_SIZE}
         height={CLOCK_SIZE}
-        style={styles.tpSvgOverlay}
+        style={{ position: 'absolute', top: 0, left: 0 }}
         pointerEvents="none"
       >
-        {/* Garis jarum */}
-        <AnimatedLine
+        <Line
           x1={CLOCK_CENTER}
           y1={CLOCK_CENTER}
-          x2={animX}
-          y2={animY}
+          x2={handPos.x}
+          y2={handPos.y}
           stroke={colors.accentPurple}
           strokeWidth={2}
           strokeLinecap="round"
         />
-        {/* Titik pivot tengah */}
-        <Circle
-          cx={CLOCK_CENTER}
-          cy={CLOCK_CENTER}
-          r={4}
-          fill={colors.accentPurple}
-        />
-        {/* Bulatan ujung jarum */}
-        <AnimatedCircle
-          cx={animX}
-          cy={animY}
-          r={18}
-          fill={colors.accentPurple}
-        />
+        <Circle cx={CLOCK_CENTER} cy={CLOCK_CENTER} r={4} fill={colors.accentPurple} />
+        <Circle cx={handPos.x} cy={handPos.y} r={18} fill={colors.accentPurple} />
       </Svg>
 
-      {/* ── Outer ring numbers ─────────────────────────────────────────── */}
       {outerNums.map((num, i) => {
         const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
         const x = CLOCK_CENTER + OUTER_RADIUS * Math.cos(angle) - NUM_SIZE_OUTER / 2;
         const y = CLOCK_CENTER + OUTER_RADIUS * Math.sin(angle) - NUM_SIZE_OUTER / 2;
-
         const isHourSelected =
-          mode === 'hour' &&
-          !isInnerSelected &&
+          mode === 'hour' && !isInnerSelected &&
           (hour === num || (num === 12 && hour === 12));
-        const isMinSelected =
-          mode === 'minute' && (num * 5) % 60 === minute;
+        const isMinSelected = mode === 'minute' && (num * 5) % 60 === minute;
         const isSelected = isHourSelected || isMinSelected;
 
         return (
           <Text
             key={`outer-${num}`}
             pointerEvents="none"
-            style={[
-              styles.tpClockNumber,
-              {
-                left: x,
-                top: y,
-                width: NUM_SIZE_OUTER,
-                height: NUM_SIZE_OUTER,
-              },
-              isSelected && styles.tpClockNumberSelected,
-            ]}
+            style={{
+              position: 'absolute',
+              left: x,
+              top: y,
+              width: NUM_SIZE_OUTER,
+              height: NUM_SIZE_OUTER,
+              textAlign: 'center',
+              textAlignVertical: 'center',
+              lineHeight: NUM_SIZE_OUTER,
+              fontSize: 14,
+              fontFamily: 'Fredoka_500Medium',
+              color: isSelected ? '#FFFFFF' : colors.ink,
+              backgroundColor: isSelected ? colors.accentPurple : 'transparent',
+              borderRadius: NUM_SIZE_OUTER / 2,
+              zIndex: 2,
+            }}
           >
             {mode === 'minute' ? String((num * 5) % 60).padStart(2, '0') : num}
           </Text>
         );
       })}
 
-      {/* ── Inner ring numbers (hour only) ────────────────────────────── */}
       {mode === 'hour' &&
         innerNums.map((num, i) => {
           const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
@@ -419,17 +379,22 @@ function ClockFace({ mode, hour, minute, onHourChange, onMinuteChange, onRelease
             <Text
               key={`inner-${num}`}
               pointerEvents="none"
-              style={[
-                styles.tpClockNumberInner,
-                {
-                  left: x,
-                  top: y,
-                  width: NUM_SIZE_INNER,
-                  height: NUM_SIZE_INNER,
-                },
-                isSelected && styles.tpClockNumberSelected,
-                isSelected && { borderRadius: NUM_SIZE_INNER / 2 },
-              ]}
+              style={{
+                position: 'absolute',
+                left: x,
+                top: y,
+                width: NUM_SIZE_INNER,
+                height: NUM_SIZE_INNER,
+                textAlign: 'center',
+                textAlignVertical: 'center',
+                lineHeight: NUM_SIZE_INNER,
+                fontSize: 11,
+                fontFamily: 'Fredoka_500Medium',
+                color: isSelected ? '#FFFFFF' : colors.inkSoft,
+                backgroundColor: isSelected ? colors.accentPurple : 'transparent',
+                borderRadius: NUM_SIZE_INNER / 2,
+                zIndex: 2,
+              }}
             >
               {label}
             </Text>
@@ -456,7 +421,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const handleBack = onBack || (() => router.back());
 
   // ── State ──────────────────────────────────────────────────────────────────
-
   const [notifEnabled, setNotifEnabled] = useState<boolean>(true);
   const [moodTimes, setMoodTimes] = useState<string[]>(['21:00']);
   const [jurnalTimes, setJurnalTimes] = useState<string[]>(['21:00']);
@@ -469,6 +433,9 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   const [tempAvatar, setTempAvatar] = useState<string>('icon1');
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
+  // FIX: State untuk cek apakah user sudah login (bukan anonim)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
   // ── Load profil dari AsyncStorage & Supabase ────────────────────────────────
   useEffect(() => {
     const loadName = async () => {
@@ -480,7 +447,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          // tambahkan ini
           setSessionEmail(session.user.email || null);
 
           const { data: profile } = await supabase
@@ -521,17 +487,17 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
   // ── Cek sesi login Supabase ─────────────────────────────────────────────────
   useEffect(() => {
     const fetchSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setSessionEmail(session?.user?.email || null);
+      // FIX: Cek apakah user sudah login dengan akun nyata (bukan anonim)
+      setIsLoggedIn(!!session?.user?.email && !session?.user?.is_anonymous);
     };
     fetchSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSessionEmail(session?.user?.email || null);
+      // FIX: Update state login saat auth berubah
+      setIsLoggedIn(!!session?.user?.email && !session?.user?.is_anonymous);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -540,9 +506,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     if (!tempName.trim()) return;
 
     try {
-      let {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
         const { data, error } = await supabase.auth.signInAnonymously();
@@ -586,26 +550,10 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
 
   // ── Time Picker State ───────────────────────────────────────────────────────
   const [isTimeModalVisible, setTimeModalVisible] = useState<boolean>(false);
-  const [timeTarget, setTimeTarget] = useState<
-    'mood' | 'jurnal' | 'assesmen' | null
-  >(null);
-
-  // 24h format: hour 0-23, minute 0-59
+  const [timeTarget, setTimeTarget] = useState<'mood' | 'jurnal' | 'assesmen' | null>(null);
   const [pickerHour, setPickerHour] = useState<number>(13);
   const [pickerMinute, setPickerMinute] = useState<number>(0);
   const [pickerMode, setPickerMode] = useState<'hour' | 'minute'>('hour');
-
-  const handleMinuteChange = (m: number) => {
-    setPickerMinute(m);
-  };
-
-  const handleClockHourSelect = (h: number) => {
-    setPickerHour(h);
-  };
-
-  const handleClockRelease = () => {
-    // Otomatis pindah ke menit dinonaktifkan, biarkan pengguna tap secara manual
-  };
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -671,12 +619,13 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     setTimeModalVisible(true);
   };
 
+  // FIX: Logout sekarang redirect ke /b-login, bukan /login
   const handleLogout = async () => {
     if (onLogout) {
       onLogout();
     } else {
       await supabase.auth.signOut();
-      router.replace('/login');
+      router.replace('/b-login');
     }
   };
 
@@ -686,7 +635,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" backgroundColor={colors.canvas} />
 
-      {/* Top App Bar */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleBack}
@@ -703,7 +651,6 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Scrollable Content */}
       <ScrollView
         style={styles.wrapper}
         contentContainerStyle={styles.scrollContent}
@@ -712,18 +659,16 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
       >
         {/* ── Profil ──────────────────────────────────────────────────────── */}
         <View style={[styles.card, styles.akunCard, { paddingRight: 64 }]}>
-          <View
-          style={[styles.profilDetails, styles.profilDetailsRow]}
-          >
+          <View style={[styles.profilDetails, styles.profilDetailsRow]}>
             <Image
               source={
                 AVATARS.find((a) => a.id === avatar)?.source ||
                 AVATARS[0].source
               }
-            style={styles.profilAvatar}
+              style={styles.profilAvatar}
               contentFit="cover"
             />
-          <View style={styles.profilInfo}>
+            <View style={styles.profilInfo}>
               <View style={styles.profilRow}>
                 <Icon name="person" size={20} color={colors.inkSoft} />
                 <Text style={styles.profilText}>
@@ -739,9 +684,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
                     onPress={() => router.push('/b-login')}
                     activeOpacity={0.7}
                   >
-                    <Text
-                  style={[styles.profilText, styles.profilTextLink]}
-                    >
+                    <Text style={[styles.profilText, styles.profilTextLink]}>
                       Masuk akun
                     </Text>
                   </TouchableOpacity>
@@ -800,20 +743,20 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
           />
         </View>
 
-        {/* ── Logout ──────────────────────────────────────────────────────── */}
-        <View style={styles.logoutContainer}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleLogout}
-          style={[styles.akunButton, styles.akunButtonLogout]}
-            accessibilityRole="button"
-            accessibilityLabel="Keluar dari akun"
-          >
-          <Text style={styles.akunButtonText}>
-              Keluar
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* FIX: Tombol keluar hanya muncul kalau sudah login dengan akun nyata */}
+        {isLoggedIn && (
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleLogout}
+              style={[styles.akunButton, styles.akunButtonLogout]}
+              accessibilityRole="button"
+              accessibilityLabel="Keluar dari akun"
+            >
+              <Text style={styles.akunButtonText}>Keluar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* ── Modal Edit Profil ────────────────────────────────────────────── */}
@@ -835,9 +778,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               </Text>
             </View>
 
-            <View
-              style={styles.avatarGrid}
-            >
+            <View style={styles.avatarGrid}>
               {AVATARS.map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -902,19 +843,9 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
             style={[styles.modalCard, styles.modalCardNoPadding]}
             onStartShouldSetResponder={() => true}
           >
-            {/* Header banner */}
-            <View
-              style={styles.tpModalHeader}
-            >
-              <Text
-                style={styles.tpModalTitle}
-              >
-                PILIH WAKTU
-              </Text>
-              <View
-                style={styles.tpDigitalContainer}
-              >
-                {/* Hour */}
+            <View style={styles.tpModalHeader}>
+              <Text style={styles.tpModalTitle}>PILIH WAKTU</Text>
+              <View style={styles.tpDigitalContainer}>
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => setPickerMode('hour')}
@@ -933,13 +864,8 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
                   </Text>
                 </TouchableOpacity>
 
-                <Text
-                  style={styles.tpColon}
-                >
-                  :
-                </Text>
+                <Text style={styles.tpColon}>:</Text>
 
-                {/* Minute */}
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => setPickerMode('minute')}
@@ -960,48 +886,32 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               </View>
             </View>
 
-            {/* Clock body */}
-            <View
-              style={styles.tpClockBody}
-            >
-              <View
-                style={styles.tpClockContainerWrapper}
-              >
+            <View style={styles.tpClockBody}>
+              <View style={styles.tpClockContainerWrapper}>
                 <ClockFace
                   mode={pickerMode}
                   hour={pickerHour}
                   minute={pickerMinute}
-                  onHourChange={handleClockHourSelect}
-                  onMinuteChange={handleMinuteChange}
-                  onRelease={handleClockRelease}
+                  onHourChange={setPickerHour}
+                  onMinuteChange={setPickerMinute}
+                  onRelease={() => {}}
                 />
               </View>
 
-              {/* Footer */}
-              <View
-                style={styles.tpFooter}
-              >
+              <View style={styles.tpFooter}>
                 <TouchableOpacity
                   style={styles.tpBtnCancel}
                   onPress={() => setTimeModalVisible(false)}
                   activeOpacity={0.7}
                 >
-                  <Text
-                    style={styles.tpBtnCancelText}
-                  >
-                    BATAL
-                  </Text>
+                  <Text style={styles.tpBtnCancelText}>BATAL</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.tpBtnOk}
                   onPress={handleSaveTime}
                   activeOpacity={0.8}
                 >
-                  <Text
-                    style={styles.tpBtnOkText}
-                  >
-                    OKE
-                  </Text>
+                  <Text style={styles.tpBtnOkText}>OKE</Text>
                 </TouchableOpacity>
               </View>
             </View>
