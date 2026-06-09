@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -146,7 +147,6 @@ function DassChart({ latestDass }: { latestDass: any }) {
   const { width } = useWindowDimensions();
   const chartWidth = width - 64;
 
-  // Fungsi untuk memetakan teks kategori ke tinggi sumbu-Y (1 sampai 5)
   const getSeverityValue = (cat: string) => {
     if (!cat) return 0;
     const c = cat.toLowerCase();
@@ -205,6 +205,7 @@ export default function Index() {
   const [tempName, setTempName] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false); // FIX: state untuk pull-to-refresh
 
   const getLocalDateString = () => {
     const now = new Date();
@@ -225,21 +226,71 @@ export default function Index() {
       .limit(1)
       .maybeSingle();
     if (data?.mood) setSelectedMood(data.mood);
+    else setSelectedMood(null);
   }, []);
+
+  const fetchDass = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from("dass_results")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) setLatestDass(data);
+  }, []);
+
+  const fetchUnreadNotif = useCallback(async () => {
+    const inbox = await getInboxNotifications();
+    const unread = inbox.filter((n) => !n.isRead).length;
+    setUnreadCount(unread);
+  }, []);
+
+  // FIX: Fungsi refresh — dipanggil saat pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const uid = session.user.id;
+
+        // Refresh nickname dari DB
+        const { data: profile } = await supabase
+          .from('profile')
+          .select('nickname')
+          .eq('id', uid)
+          .maybeSingle();
+        if (profile?.nickname) {
+          setNickname(profile.nickname);
+          await AsyncStorage.setItem('user_nickname', profile.nickname);
+        }
+
+        // Refresh mood, dass, notif
+        await Promise.all([
+          loadMoodForUser(uid),
+          fetchDass(uid),
+          fetchUnreadNotif(),
+        ]);
+      } else {
+        await fetchUnreadNotif();
+      }
+    } catch (e) {
+      console.error('Gagal refresh:', e);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadMoodForUser, fetchDass, fetchUnreadNotif]);
 
   // ── Fungsi utama load nickname & session ──
   useEffect(() => {
     const loadName = async () => {
       try {
-        // 1. Cek session Supabase dulu
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
-          // Ada session — set userId dan ambil mood
           setUserId(session.user.id);
           await loadMoodForUser(session.user.id);
 
-          // Prioritaskan nickname dari DB
           const { data: profile } = await supabase
             .from('profile')
             .select('nickname')
@@ -252,25 +303,20 @@ export default function Index() {
             return;
           }
 
-          // Fallback ke local storage kalau DB kosong
           const savedName = await AsyncStorage.getItem('user_nickname');
           if (savedName) {
             setNickname(savedName);
-            // Sync ke DB
             await supabase.from('profile').update({ nickname: savedName }).eq('id', session.user.id);
             return;
           }
 
-          // Tidak ada nickname sama sekali — tampilkan modal
           setModalVisible(true);
           return;
         }
 
-        // 2. Tidak ada session — cek local storage
         const savedName = await AsyncStorage.getItem('user_nickname');
         if (savedName) {
           setNickname(savedName);
-          // Sign in anonim untuk sinkronisasi data
           const { data: { session: newSession }, error } = await supabase.auth.signInAnonymously();
           if (!error && newSession) {
             setUserId(newSession.user.id);
@@ -285,7 +331,6 @@ export default function Index() {
           return;
         }
 
-        // 3. Benar-benar user baru — tampilkan modal nama
         setModalVisible(true);
 
       } catch (error) {
@@ -295,7 +340,6 @@ export default function Index() {
 
     loadName();
 
-    // ── Auth state listener — handle perubahan session (setelah login/logout) ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -325,30 +369,12 @@ export default function Index() {
     return () => subscription.unsubscribe();
   }, [loadMoodForUser]);
 
-  // ── Refresh DASS chart setiap kali halaman difokuskan ──
+  // ── Refresh DASS chart & notif setiap kali halaman difokuskan ──
   useFocusEffect(
     useCallback(() => {
-      const fetchDass = async () => {
-        if (!userId) return;
-        const { data } = await supabase
-          .from("dass_results")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data) setLatestDass(data);
-      };
-
-      const fetchUnreadNotif = async () => {
-        const inbox = await getInboxNotifications();
-        const unread = inbox.filter((n) => !n.isRead).length;
-        setUnreadCount(unread);
-      };
-
-      fetchDass();
+      if (userId) fetchDass(userId);
       fetchUnreadNotif();
-    }, [userId])
+    }, [userId, fetchDass, fetchUnreadNotif])
   );
 
   const handleSelectMood = async (moodId: string) => {
@@ -424,7 +450,12 @@ export default function Index() {
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Link href="/inbox" asChild>
-            
+            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button" style={{ position: 'relative' }}>
+              <Icon name="notifications" size={26} color={colors.ink} />
+              {unreadCount > 0 && (
+                <View style={{ position: 'absolute', top: 0, right: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accentRed, borderWidth: 1.5, borderColor: colors.canvas }} />
+              )}
+            </TouchableOpacity>
           </Link>
           <Link href="/settings-notification" asChild>
             <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
@@ -434,7 +465,19 @@ export default function Index() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* FIX: Tambah RefreshControl ke ScrollView */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.accentPurple]}
+            tintColor={colors.accentPurple}
+          />
+        }
+      >
         <MotivationCard />
         <MoodSelector selected={selectedMood} onSelect={handleSelectMood} />
         <QuickActions />
