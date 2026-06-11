@@ -1,5 +1,4 @@
 // index.tsx
-import { MaterialIcons as Icon } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { Link, useFocusEffect } from "expo-router";
@@ -21,8 +20,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { VictoryAxis, VictoryBar, VictoryChart } from "victory-native";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
-import { getInboxNotifications } from "../lib/notifications";
 import { BAR_COLORS, colors, styles } from "./styles";
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const DAY_NAMES_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -204,8 +203,7 @@ export default function Index() {
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [refreshing, setRefreshing] = useState(false); // FIX: state untuk pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
 
   const getLocalDateString = () => {
     const now = new Date();
@@ -240,48 +238,44 @@ export default function Index() {
     if (data) setLatestDass(data);
   }, []);
 
-  const fetchUnreadNotif = useCallback(async () => {
-    const inbox = await getInboxNotifications();
-    const unread = inbox.filter((n) => !n.isRead).length;
-    setUnreadCount(unread);
-  }, []);
+  // ── Helper: load semua data untuk user tertentu ──────────────────────────────
+  const loadUserData = useCallback(async (uid: string) => {
+    const { data: profile } = await supabase
+      .from('profile')
+      .select('nickname')
+      .eq('id', uid)
+      .maybeSingle();
 
-  // FIX: Fungsi refresh — dipanggil saat pull-to-refresh
+    if (profile?.nickname) {
+      setNickname(profile.nickname);
+      await AsyncStorage.setItem('user_nickname', profile.nickname);
+    } else {
+      const savedName = await AsyncStorage.getItem('user_nickname');
+      if (savedName) setNickname(savedName);
+    }
+
+    await Promise.all([
+      loadMoodForUser(uid),
+      fetchDass(uid),
+    ]);
+  }, [loadMoodForUser, fetchDass]);
+
+  // ── Pull-to-refresh ──────────────────────────────────────────────────────────
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const uid = session.user.id;
-
-        // Refresh nickname dari DB
-        const { data: profile } = await supabase
-          .from('profile')
-          .select('nickname')
-          .eq('id', uid)
-          .maybeSingle();
-        if (profile?.nickname) {
-          setNickname(profile.nickname);
-          await AsyncStorage.setItem('user_nickname', profile.nickname);
-        }
-
-        // Refresh mood, dass, notif
-        await Promise.all([
-          loadMoodForUser(uid),
-          fetchDass(uid),
-          fetchUnreadNotif(),
-        ]);
-      } else {
-        await fetchUnreadNotif();
+        await loadUserData(session.user.id);
       }
     } catch (e) {
       console.error('Gagal refresh:', e);
     } finally {
       setRefreshing(false);
     }
-  }, [loadMoodForUser, fetchDass, fetchUnreadNotif]);
+  }, [loadUserData]);
 
-  // ── Fungsi utama load nickname & session ──
+  // ── Initial load & auth listener ─────────────────────────────────────────────
   useEffect(() => {
     const loadName = async () => {
       try {
@@ -289,28 +283,7 @@ export default function Index() {
 
         if (session?.user) {
           setUserId(session.user.id);
-          await loadMoodForUser(session.user.id);
-
-          const { data: profile } = await supabase
-            .from('profile')
-            .select('nickname')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (profile?.nickname) {
-            setNickname(profile.nickname);
-            await AsyncStorage.setItem('user_nickname', profile.nickname);
-            return;
-          }
-
-          const savedName = await AsyncStorage.getItem('user_nickname');
-          if (savedName) {
-            setNickname(savedName);
-            await supabase.from('profile').update({ nickname: savedName }).eq('id', session.user.id);
-            return;
-          }
-
-          setModalVisible(true);
+          await loadUserData(session.user.id);
           return;
         }
 
@@ -344,37 +317,47 @@ export default function Index() {
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUserId(session.user.id);
-          await loadMoodForUser(session.user.id);
-
-          const { data: profile } = await supabase
-            .from('profile')
-            .select('nickname')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (profile?.nickname) {
-            setNickname(profile.nickname);
-            await AsyncStorage.setItem('user_nickname', profile.nickname);
-          }
+          await loadUserData(session.user.id);
         }
 
         if (event === 'SIGNED_OUT') {
           setUserId(null);
           setNickname('');
           setSelectedMood(null);
+          setLatestDass(null);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [loadMoodForUser]);
+  }, [loadMoodForUser, loadUserData]);
 
-  // ── Refresh DASS chart & notif setiap kali halaman difokuskan ──
+  // ── FIX: useFocusEffect — re-check session setiap kali halaman difokuskan ────
+  // Ini yang nangkap state setelah Google login karena onAuthStateChange kadang
+  // tidak fire di screen yang sudah mount ketika setSession() dipanggil manual
   useFocusEffect(
     useCallback(() => {
-      if (userId) fetchDass(userId);
-      fetchUnreadNotif();
-    }, [userId, fetchDass, fetchUnreadNotif])
+      const recheckSession = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const currentUid = session.user.id;
+            if (currentUid !== userId) {
+              // Session baru (misal habis login Google) — load ulang semua data
+              setUserId(currentUid);
+              await loadUserData(currentUid);
+            } else {
+              // userId sama, cukup refresh DASS chart
+              await fetchDass(currentUid);
+            }
+          }
+        } catch (e) {
+          console.error('recheckSession error:', e);
+        }
+      };
+
+      recheckSession();
+    }, [userId, fetchDass, loadUserData])
   );
 
   const handleSelectMood = async (moodId: string) => {
@@ -444,28 +427,18 @@ export default function Index() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" backgroundColor={colors.canvas} />
 
+      {/* FIX: Hapus icon notifikasi, hanya sisakan settings */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { flex: 1, marginRight: 8, fontSize: 24, textAlign: 'left' }]} numberOfLines={1} adjustsFontSizeToFit>
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Link href="/inbox" asChild>
-            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button" style={{ position: 'relative' }}>
-              <Icon name="notifications" size={26} color={colors.ink} />
-              {unreadCount > 0 && (
-                <View style={{ position: 'absolute', top: 0, right: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accentRed, borderWidth: 1.5, borderColor: colors.canvas }} />
-              )}
-            </TouchableOpacity>
-          </Link>
-          <Link href="/settings-notification" asChild>
-            <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
-              <Icon name="settings" size={26} color={colors.ink} />
-            </TouchableOpacity>
-          </Link>
-        </View>
+        <Link href="/settings-notification" asChild>
+          <TouchableOpacity activeOpacity={0.7} accessibilityRole="button">
+            <Icon name="settings" size={26} color={colors.ink} />
+          </TouchableOpacity>
+        </Link>
       </View>
 
-      {/* FIX: Tambah RefreshControl ke ScrollView */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

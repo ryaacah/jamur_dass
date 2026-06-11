@@ -37,8 +37,6 @@ const WelcomeScreen: React.FC = () => {
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    // FIX: Gunakan path yang konsisten untuk redirect URL
-    // Sebelumnya: Linking.createURL('') — string kosong bisa bermasalah di beberapa device
     const redirectUrl = Linking.createURL('/');
 
     // Simpan ID anonim sebelum login jika ada
@@ -53,9 +51,7 @@ const WelcomeScreen: React.FC = () => {
         provider: 'google',
         options: {
           redirectTo: Linking.createURL('/'),
-          queryParams: {
-            prompt: 'select_account',
-          }
+          queryParams: { prompt: 'select_account' }
         }
       });
       if (error) Alert.alert('Gagal', error.message);
@@ -149,12 +145,17 @@ const WelcomeScreen: React.FC = () => {
             console.error('Gagal sync profil:', e);
           }
 
+          // FIX: Tunggu sebentar agar session Supabase sempat propagate ke
+          // seluruh client sebelum navigasi. Tanpa delay ini, index.tsx
+          // kadang keburu getSession() sebelum token baru tersedia,
+          // sehingga halaman terlihat belum login sampai app di-restart.
+          await new Promise(resolve => setTimeout(resolve, 300));
+
           router.replace('/');
         } else {
           Alert.alert('Gagal', 'Tidak bisa mendapatkan token dari Google.');
         }
       } else if (res.type === 'cancel' || res.type === 'dismiss') {
-        // FIX: Tambah handling kalau user cancel — sebelumnya silent
         console.log('Google login dibatalkan user.');
       }
     }
