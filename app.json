@@ -4,18 +4,22 @@
     "slug": "Naung",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/splash_icon.webp",
+    "icon": "./assets/images/splash_icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.naung.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/splash_icon.webp",
-        "backgroundImage": "./assets/images/splash_icon.webp  "
+        "foregroundImage": "./assets/images/splash_icon.png",
+        "backgroundImage": "./assets/images/splash_icon.png  "
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -38,14 +42,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/splash_icon.webp"
+      "favicon": "./assets/images/splash_icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash_icon.webp",
+          "image": "./assets/images/splash_icon.png",
           "resizeMode": "cover",
           "backgroundColor": "#FFFFF8"
         }
@@ -62,7 +66,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e36059bf-1dc3-4c7f-8241-99ea271511e3"
+        "projectId": "18e25f6f-7607-45c2-b6c9-78b34e1b8127"
       }
     },
     "owner": "rayaa"
