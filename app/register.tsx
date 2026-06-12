@@ -126,7 +126,7 @@ export default function RegisterScreen() {
       <StatusBar style="dark" backgroundColor="transparent" translucent />
 
       <ImageBackground
-        source={require('../assets/images/bg_splash.png')}
+        source={require('../assets/images/bg_splash.webp')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />

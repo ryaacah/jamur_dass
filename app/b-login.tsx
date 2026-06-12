@@ -21,8 +21,8 @@ import { colors, styles } from './styles';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const BG_IMAGE = require('../assets/images/bg_splash.png');
-const MASCOT_IMAGE = require('../assets/images/splash_icon.png');
+const BG_IMAGE = require('../assets/images/bg_splash.webp');
+const MASCOT_IMAGE = require('../assets/images/splash_icon. webp');
 
 const GoogleIcon: React.FC = () => (
   <Svg viewBox="0 0 24 24" width={20} height={20}>

@@ -4,7 +4,7 @@
     "slug": "Naung",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/splash_icon.png",
+    "icon": "./assets/images/splash_icon.webp",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,8 +14,8 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/splash_icon.png",
-        "backgroundImage": "./assets/images/splash_icon.png"
+        "foregroundImage": "./assets/images/splash_icon.webp",
+        "backgroundImage": "./assets/images/splash_icon.webp  "
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -29,20 +29,23 @@
               "scheme": "myapp"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/splash_icon.png"
+      "favicon": "./assets/images/splash_icon.webp"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash_icon.png",
+          "image": "./assets/images/splash_icon.webp",
           "resizeMode": "cover",
           "backgroundColor": "#FFFFF8"
         }
@@ -61,6 +64,7 @@
       "eas": {
         "projectId": "e36059bf-1dc3-4c7f-8241-99ea271511e3"
       }
-    }
+    },
+    "owner": "rayaa"
   }
 }

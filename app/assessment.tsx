@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, styles } from "./styles";
 
 // ─── Local Assets ─────────────────────────────────────────────────────────────
-const MASCOT_IMAGE = require("../assets/images/mur-jur.png");
+const MASCOT_IMAGE = require("../assets/images/mur-jur.webp");
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

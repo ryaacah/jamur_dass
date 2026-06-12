@@ -3,8 +3,8 @@ import { Image, SafeAreaView, Text, View } from "react-native";
 import { styles } from "./styles";
 
 // ─── Local Assets ─────────────────────────────────────────────────────────────
-const BG_IMAGE = require("../assets/images/bg_splash.png");
-const MASCOT_IMAGE = require("../assets/images/splash_icon.png");
+const BG_IMAGE = require("../assets/images/bg_splash.webp");
+const MASCOT_IMAGE = require("../assets/images/splash_icon.webp");
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function SplashScreen() {

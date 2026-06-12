@@ -23,11 +23,11 @@ import { colors, styles } from './styles';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MOOD_CONFIG: Record<string, { image: any; label: string }> = {
-  senang: { image: require("../assets/images/j_senang.png"), label: "senang" },
-  sedih:  { image: require("../assets/images/j_sedih.png"),  label: "sedih"  },
-  marah:  { image: require("../assets/images/j_marah.png"),  label: "marah"  },
-  cemas:  { image: require("../assets/images/j_cemas.png"),  label: "cemas"  },
-  rileks: { image: require("../assets/images/j_relax.png"),  label: "rileks" },
+  senang: { image: require("../assets/images/j_senang.webp"), label: "senang" },
+  sedih:  { image: require("../assets/images/j_sedih.webp"),  label: "sedih"  },
+  marah:  { image: require("../assets/images/j_marah.webp"),  label: "marah"  },
+  cemas:  { image: require("../assets/images/j_cemas.webp"),  label: "cemas"  },
+  rileks: { image: require("../assets/images/j_relax.webp"),  label: "rileks" },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

@@ -125,7 +125,7 @@ function ResetCard({ onPress }: { onPress?: () => void }) {
     <View style={styles.resetCard}>
       <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
         <Image
-          source={require("../assets/images/relx.png")}
+          source={require("../assets/images/relx.webp")}
           style={{ position: "absolute", bottom: -12, right: -12, width: 104, height: 104, opacity: 0.9 }}
           contentFit="contain"
         />

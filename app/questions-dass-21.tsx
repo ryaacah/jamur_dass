@@ -20,10 +20,10 @@ import { supabase } from '../lib/supabase';
 import { colors, styles } from './styles';
 
 // ─── Aset gambar ──────────────────────────────────────────────────────────────
-const ETIKET_0 = require("../assets/images/etiket0.png");
-const ETIKET_1 = require("../assets/images/etiket1.png");
-const ETIKET_2 = require("../assets/images/etiket2.png");
-const ETIKET_3 = require("../assets/images/etiket3.png");
+const ETIKET_0 = require("../assets/images/etiket0.webp");
+const ETIKET_1 = require("../assets/images/etiket1.webp");
+const ETIKET_2 = require("../assets/images/etiket2.webp");
+const ETIKET_3 = require("../assets/images/etiket3.webp");
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type AnswerValue = 0 | 1 | 2 | 3;

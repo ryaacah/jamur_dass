@@ -60,12 +60,12 @@ const RING_THRESHOLD = (OUTER_RADIUS + INNER_RADIUS) / 2;
 
 // ─── Daftar Opsi Avatar ───────────────────────────────────────────────────────
 const AVATARS = [
-  { id: 'icon1', source: require('../assets/images/icon1.png') },
-  { id: 'icon2', source: require('../assets/images/icon2.png') },
-  { id: 'icon3', source: require('../assets/images/icon3.png') },
-  { id: 'icon4', source: require('../assets/images/icon4.png') },
-  { id: 'icon5', source: require('../assets/images/icon5.png') },
-  { id: 'icon6', source: require('../assets/images/icon6.png') },
+  { id: 'icon1', source: require('../assets/images/icon1.webp') },
+  { id: 'icon2', source: require('../assets/images/icon2.webp') },
+  { id: 'icon3', source: require('../assets/images/icon3.webp') },
+  { id: 'icon4', source: require('../assets/images/icon4.webp') },
+  { id: 'icon5', source: require('../assets/images/icon5.webp') },
+  { id: 'icon6', source: require('../assets/images/icon6.webp') },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

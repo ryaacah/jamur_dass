@@ -28,11 +28,11 @@ const DAY_NAMES_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "
 const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 const MOODS = [
-  { id: "senang", label: "senang", color: colors.accentYellow, source: require("../assets/images/j_senang.png") },
-  { id: "sedih", label: "sedih", color: colors.accentBlue, source: require("../assets/images/j_sedih.png") },
-  { id: "marah", label: "marah", color: colors.accentRed, source: require("../assets/images/j_marah.png") },
-  { id: "cemas", label: "cemas", color: colors.accentPurple, source: require("../assets/images/j_cemas.png") },
-  { id: "rileks", label: "rileks", color: colors.accentGreen, source: require("../assets/images/j_relax.png") },
+  { id: "senang", label: "senang", color: colors.accentYellow, source: require("../assets/images/j_senang.webp") },
+  { id: "sedih", label: "sedih", color: colors.accentBlue, source: require("../assets/images/j_sedih.webp") },
+  { id: "marah", label: "marah", color: colors.accentRed, source: require("../assets/images/j_marah.webp") },
+  { id: "cemas", label: "cemas", color: colors.accentPurple, source: require("../assets/images/j_cemas.webp") },
+  { id: "rileks", label: "rileks", color: colors.accentGreen, source: require("../assets/images/j_relax.webp") },
 ];
 
 const MOTIVATIONAL_QUOTES = [
@@ -63,7 +63,7 @@ function MotivationCard() {
         {`"${quote}"`}
       </Text>
       <Image
-        source={require("../assets/images/mur.png")}
+        source={require("../assets/images/mur.webp")}
         style={{ position: "absolute", width: 80, height: 80, bottom: -16, right: -16, zIndex: 1 }}
         contentFit="contain"
       />
@@ -102,7 +102,7 @@ function QuickActions() {
       <Link href="/journal" asChild>
         <TouchableOpacity activeOpacity={0.8} style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}>
           <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
-            <Image source={require("../assets/images/mur-jur.png")} style={{ position: "absolute", bottom: -8, left: -8, width: 72, height: 72, transform: [{ scaleX: -1 }], opacity: 0.9 }} contentFit="contain" />
+            <Image source={require("../assets/images/mur-jur.webp")} style={{ position: "absolute", bottom: -8, left: -8, width: 72, height: 72, transform: [{ scaleX: -1 }], opacity: 0.9 }} contentFit="contain" />
           </View>
           <View style={{ flex: 1, zIndex: 2 }}>
             <Text style={styles.cardTitle}>Ceritakan Harimu</Text>
@@ -115,7 +115,7 @@ function QuickActions() {
       <Link href="/breathing" asChild>
         <TouchableOpacity activeOpacity={0.8} style={StyleSheet.flatten([styles.mutableCard, styles.bentoCell])}>
           <View style={[StyleSheet.absoluteFillObject, { borderRadius: 12, overflow: "hidden" }]}>
-            <Image source={require("../assets/images/relx.png")} style={{ position: "absolute", bottom: -8, right: -8, width: 72, height: 72, opacity: 0.9 }} contentFit="contain" />
+            <Image source={require("../assets/images/relx.webp")} style={{ position: "absolute", bottom: -8, right: -8, width: 72, height: 72, opacity: 0.9 }} contentFit="contain" />
           </View>
           <View style={{ flex: 1, zIndex: 2 }}>
             <Text style={styles.cardTitle}>Atur pernafasan</Text>
