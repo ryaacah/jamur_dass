@@ -19,7 +19,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/splash_icon.png",
-        "backgroundImage": "./assets/images/splash_icon.png  "
+        "backgroundImage": "./assets/images/splash_icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
