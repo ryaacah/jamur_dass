@@ -1,3 +1,4 @@
+// journal.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { Image } from "expo-image";
