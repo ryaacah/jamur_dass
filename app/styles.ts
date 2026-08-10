@@ -1734,6 +1734,68 @@ export const styles = StyleSheet.create({
   moodLegendItem: { flexDirection: "row", alignItems: "center", width: "45%" },
   moodLegendColor: { width: 16, height: 16, borderRadius: 4, marginRight: 8 },
   moodLegendLabel: { fontSize: 14, color: colors.inkSoft, textTransform: "capitalize", fontFamily: "Fredoka_400Regular" },
+
+  crisisCard: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 16,
+    padding: 18,
+    marginTop: 12,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#FBD5D5',
+  },
+ 
+  crisisHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+ 
+  crisisTitle: {
+    fontFamily: 'Fredoka_600SemiBold',
+    fontSize: 15,
+    color: colors.ink,
+    flexShrink: 1,
+  },
+ 
+  crisisSubtitle: {
+    fontFamily: 'Fredoka_400Regular',
+    fontSize: 13,
+    color: colors.inkSoft,
+    marginBottom: 14,
+  },
+ 
+  crisisButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.accentRed,
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+ 
+  crisisButtonSecondary: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+ 
+  crisisButtonText: {
+    fontFamily: 'Fredoka_600SemiBold',
+    fontSize: 14,
+    color: '#fff',
+  },
+ 
+  crisisFooterNote: {
+    fontFamily: 'Fredoka_400Regular',
+    fontSize: 11,
+    color: colors.inkSoft,
+    textAlign: 'center',
+    marginTop: 2,
+  },
 });
 
 export default styles;

@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import {
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -22,12 +23,6 @@ import { BAR_COLORS, colors, styles } from './styles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ScoreCategory = 'Normal' | 'Ringan' | 'Sedang' | 'Tinggi' | 'Sangat Tinggi';
-
-// interface ScoreItem {
-//   label: string;
-//   value: number;
-//   category: ScoreCategory;
-// }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SEVERITY_LEVELS = ['Normal', 'Ringan', 'Sedang', 'Berat', 'Sangat Parah'];
@@ -114,6 +109,50 @@ function ChartLegend() {
   );
 }
 
+// Kartu dukungan krisis — hanya dipanggil untuk kategori Berat / Sangat Parah
+function CrisisSupportCard() {
+  return (
+    <View style={styles.crisisCard}>
+      <View style={styles.crisisHeader}>
+        <Icon name="favorite" size={20} color={colors.accentRed} />
+        <Text style={styles.crisisTitle}>Butuh bicara dengan seseorang sekarang?</Text>
+      </View>
+
+      <Text style={styles.crisisSubtitle}>
+        Layanan ini gratis, rahasia, dan siap membantu 24 jam.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.crisisButton}
+        activeOpacity={0.8}
+        onPress={() => Linking.openURL('tel:119')}
+        accessibilityRole="button"
+        accessibilityLabel="Hubungi 119 ext 8, layanan SEJIWA"
+      >
+        <Icon name="call" size={18} color="#fff" />
+        <Text style={styles.crisisButtonText}>Hubungi 119 (lalu pilih ext. 8)</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.crisisButton, styles.crisisButtonSecondary]}
+        activeOpacity={0.8}
+        onPress={() => Linking.openURL('https://www.healing119.id')}
+        accessibilityRole="button"
+        accessibilityLabel="Buka website Healing 119 untuk chat"
+      >
+        <Icon name="chat" size={18} color={colors.ink} />
+        <Text style={[styles.crisisButtonText, { color: colors.ink }]}>
+          Chat lewat healing119.id
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={styles.crisisFooterNote}>
+        Layanan resmi Kementerian Kesehatan RI bersama Ikatan Psikolog Klinis Indonesia.
+      </Text>
+    </View>
+  );
+}
+
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function DassHistoryScreen() {
   const [historyList, setHistoryList] = useState<any[]>([]);
@@ -175,6 +214,7 @@ export default function DassHistoryScreen() {
   const totalScore = selectedData ? selectedData.depression_score + selectedData.anxiety_score + selectedData.stress_score : 0;
   const totalCategory = selectedData ? getMaxSeverity(selectedData.depression_category, selectedData.anxiety_category, selectedData.stress_category) : 'Normal';
   const warningContent = getWarningContent(totalCategory);
+  const isHighRisk = totalCategory === 'Berat' || totalCategory === 'Sangat Parah';
 
   const displayDate = selectedData
     ? new Date(selectedData.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -313,6 +353,9 @@ export default function DassHistoryScreen() {
             </Text>
           </View>
         )}
+
+        {/* ── Crisis Support Card (hanya untuk kategori Berat / Sangat Parah) ── */}
+        {selectedData && isHighRisk && <CrisisSupportCard />}
       </ScrollView>
 
       {/* ── Bottom Nav Bar ── */}

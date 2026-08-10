@@ -56,12 +56,10 @@ const QUESTIONS = [
   'Saya tidak dapat merasakan perasaan positif apapun.',
   'Saya mengalami kesulitan bernafas.',
   'Saya merasa sedih dan tertekan.',
-  // … tambahkan 16 pertanyaan lainnya
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-/** Minimal icon substitute — replace with react-native-vector-icons or @expo/vector-icons */
 function Icon({ name, style }: { name: string; style?: object }) {
   const iconMap: Record<string, string> = {
     arrow_back: '←',
