@@ -15,6 +15,7 @@ import SplashScreen from './splash-screen';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 ExpoSplashScreen.preventAutoHideAsync();
 
@@ -155,20 +156,22 @@ export default function RootLayout() {
   if (showSplash) return <SplashScreen />;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="journal" />
-      <Stack.Screen name="assessment" />
-      <Stack.Screen name="questions-dass-21" />
-      <Stack.Screen name="dass-history" />
-      <Stack.Screen
-        name="mood-date"
-        options={{ presentation: 'transparentModal', animation: 'fade' }}
-      />
-      <Stack.Screen
-        name="result-date"
-        options={{ presentation: 'transparentModal', animation: 'fade' }}
-      />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="journal" />
+        <Stack.Screen name="assessment" />
+        <Stack.Screen name="questions-dass-21" />
+        <Stack.Screen name="dass-history" />
+        <Stack.Screen
+          name="mood-date"
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="result-date"
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
+        />
+      </Stack>
+    </SafeAreaProvider>
   );
 }

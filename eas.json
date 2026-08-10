@@ -1,3 +1,4 @@
+//eas.json
 {
   "$schema": "https://docs.expo.dev/build/eas-json-schema.json",
   "cli": {

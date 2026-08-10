@@ -1,7 +1,9 @@
+// components/BottomNav.tsx
 import { Link } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, styles } from "../app/styles";
 
 const IconHome = ({ color }: { color: string }) => (
@@ -27,8 +29,13 @@ const IconJournal = ({ color }: { color: string }) => (
 );
 
 export default function BottomNav({ active }: { active?: "home" | "chart" | "journal" }) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.bottomNavWrapper} pointerEvents="box-none">
+    <View
+      style={[styles.bottomNavWrapper, { paddingBottom: insets.bottom }]}
+      pointerEvents="box-none"
+    >
       <View style={styles.bottomNav}>
         <Link href="/" asChild>
           <TouchableOpacity
