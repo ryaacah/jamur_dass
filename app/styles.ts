@@ -1764,6 +1764,7 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.inkSoft,
     marginBottom: 14,
+    lineHeight: 19,
   },
  
   crisisButton: {
@@ -1775,12 +1776,6 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     marginBottom: 10,
-  },
- 
-  crisisButtonSecondary: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
   },
  
   crisisButtonText: {

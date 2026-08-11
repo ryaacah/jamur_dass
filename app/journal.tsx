@@ -6,7 +6,9 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,8 +26,8 @@ import { colors, styles } from "./styles";
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JournalEntry {
   id: string;
-  date: string;        // Format: YYYY-MM-DD
-  displayDate: string; // Format: "20 Feb"
+  date: string;
+  displayDate: string;
   preview: string;
 }
 
@@ -189,7 +191,7 @@ function JournalHistorySection({ entries }: { entries: JournalEntry[] }) {
             params: { 
               id: entry.id, 
               displayDate: entry.displayDate, 
-              date: entry.date,      // ✅ FIX: ganti "rawDate" → "date"
+              date: entry.date,
               body: entry.preview 
             }
           })}
@@ -215,10 +217,8 @@ export default function JournalScreen() {
   const [isMoodModalVisible, setMoodModalVisible] = useState(false);
   const [markedDates, setMarkedDates] = useState<any>({});
 
-  // Set default ke format YYYY-MM-DD hari ini
   const [selectedDay] = useState(() => getLocalDateString(new Date()));
 
-  // Menghasilkan daftar hari dari Senin hingga Minggu di minggu ini
   const weekDays = useMemo(() => {
     const today = new Date();
     const currentDay = today.getDay();
@@ -247,7 +247,6 @@ export default function JournalScreen() {
     return days;
   }, [markedDates]);
 
-  // ── Load jurnal dari Supabase ──────────────────────────────────────────────
   useEffect(() => {
     const fetchJournals = async () => {
       let currentId: string | null = null;
@@ -263,7 +262,6 @@ export default function JournalScreen() {
 
       setUserId(currentId);
 
-      // ✅ FIX: pakai kolom "content" sesuai schema DB
       const { data, error } = await supabase
         .from("journals")
         .select("id, date, content")
@@ -282,7 +280,7 @@ export default function JournalScreen() {
             id: d.id,
             date: d.date,
             displayDate: formatDisplayDate(d.date),
-            preview: d.content, // ✅ FIX: d.content bukan d.body
+            preview: d.content,
           }))
         );
       }
@@ -291,7 +289,6 @@ export default function JournalScreen() {
     fetchJournals();
   }, []);
 
-  // ── Load data mood untuk kalender pop-up ──────────────────────────────────
   useEffect(() => {
     const fetchMoods = async () => {
       if (!userId) return;
@@ -321,7 +318,6 @@ export default function JournalScreen() {
     fetchMoods();
   }, [userId]);
 
-  // ── Simpan jurnal ─────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!journalText.trim()) return;
 
@@ -345,17 +341,16 @@ export default function JournalScreen() {
         return;
       }
 
-      // ✅ FIX: pakai kolom "content" sesuai schema DB
       const { data, error } = await supabase
         .from("journals")
         .insert([
           {
             user_id: currentUserId,
             date: selectedDay,
-            content: journalText.trim(), // ✅ FIX: "content" bukan "body"
+            content: journalText.trim(),
           },
         ])
-        .select("id, date, content") // ✅ FIX: select "content" bukan "body"
+        .select("id, date, content")
         .single();
 
       if (error) throw error;
@@ -365,7 +360,7 @@ export default function JournalScreen() {
           id: data.id,
           date: data.date,
           displayDate: formatDisplayDate(data.date),
-          preview: data.content, // ✅ FIX: data.content bukan data.body
+          preview: data.content,
         };
 
         const updatedEntries = [newEntry, ...entries].sort(
@@ -388,31 +383,37 @@ export default function JournalScreen() {
         {/* Sticky Header */}
         <Header onBack={() => router.back()} />
 
-        {/* Scrollable content */}
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          {/* Kalender Mingguan */}
-          <WeekCalendar weekDays={weekDays} />
+          {/* Scrollable content */}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Kalender Mingguan */}
+            <WeekCalendar weekDays={weekDays} />
 
-          {/* Lihat riwayat mood */}
-          <MoodHistoryButton onPress={() => setMoodModalVisible(true)} />
+            {/* Lihat riwayat mood */}
+            <MoodHistoryButton onPress={() => setMoodModalVisible(true)} />
 
-          {/* Reset pikiran card */}
-          <ResetCard onPress={() => router.push("./breathing")} />
+            {/* Reset pikiran card */}
+            <ResetCard onPress={() => router.push("./breathing")} />
 
-          {/* Journal input */}
-          <JournalInput
-            value={journalText}
-            onChange={setJournalText}
-            onSave={handleSave}
-          />
+            {/* Journal input */}
+            <JournalInput
+              value={journalText}
+              onChange={setJournalText}
+              onSave={handleSave}
+            />
 
-          {/* History */}
-          <JournalHistorySection entries={entries} />
-        </ScrollView>
+            {/* History */}
+            <JournalHistorySection entries={entries} />
+          </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Bottom Navigation */}
         <BottomNav active="journal" />

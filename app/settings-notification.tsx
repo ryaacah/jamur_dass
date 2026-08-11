@@ -9,8 +9,10 @@ import {
   Alert,
   Animated,
   Easing,
+  KeyboardAvoidingView,
   Modal,
   PanResponder,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -766,7 +768,10 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
         animationType="fade"
         onRequestClose={() => {}}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View
             style={styles.modalCard}
             onStartShouldSetResponder={() => true}
@@ -828,7 +833,7 @@ const PengaturanScreen: React.FC<PengaturanScreenProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Material 24h Time Picker Modal ──────────────────────────────── */}

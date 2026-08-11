@@ -6,7 +6,9 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -238,7 +240,6 @@ export default function Index() {
     if (data) setLatestDass(data);
   }, []);
 
-  // ── Helper: load semua data untuk user tertentu ──────────────────────────────
   const loadUserData = useCallback(async (uid: string) => {
     const { data: profile } = await supabase
       .from('profile')
@@ -260,7 +261,6 @@ export default function Index() {
     ]);
   }, [loadMoodForUser, fetchDass]);
 
-  // ── Pull-to-refresh ──────────────────────────────────────────────────────────
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -275,7 +275,6 @@ export default function Index() {
     }
   }, [loadUserData]);
 
-  // ── Initial load & auth listener ─────────────────────────────────────────────
   useEffect(() => {
     const loadName = async () => {
       try {
@@ -332,9 +331,6 @@ export default function Index() {
     return () => subscription.unsubscribe();
   }, [loadMoodForUser, loadUserData]);
 
-  // ── FIX: useFocusEffect — re-check session setiap kali halaman difokuskan ────
-  // Ini yang nangkap state setelah Google login karena onAuthStateChange kadang
-  // tidak fire di screen yang sudah mount ketika setSession() dipanggil manual
   useFocusEffect(
     useCallback(() => {
       const recheckSession = async () => {
@@ -343,11 +339,9 @@ export default function Index() {
           if (session?.user) {
             const currentUid = session.user.id;
             if (currentUid !== userId) {
-              // Session baru (misal habis login Google) — load ulang semua data
               setUserId(currentUid);
               await loadUserData(currentUid);
             } else {
-              // userId sama, cukup refresh DASS chart
               await fetchDass(currentUid);
             }
           }
@@ -427,7 +421,6 @@ export default function Index() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" backgroundColor={colors.canvas} />
 
-      {/* FIX: Hapus icon notifikasi, hanya sisakan settings */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { flex: 1, marginRight: 8, fontSize: 24, textAlign: 'left' }]} numberOfLines={1} adjustsFontSizeToFit>
           {nickname ? `${getGreeting()}, ${nickname}!` : headerDate}
@@ -462,7 +455,10 @@ export default function Index() {
       <BottomNav active="home" />
 
       <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => {}}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
             <View style={[styles.modalTextGroup, { marginBottom: 8 }]}>
               <Text style={styles.modalTitle}>Kenalan Dulu Yuk!</Text>
@@ -487,7 +483,7 @@ export default function Index() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

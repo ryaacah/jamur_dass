@@ -1,4 +1,4 @@
-// File: app/register.tsx  ← FIX: nama file typo "resgister" -> "register"
+// File: app/register.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -91,11 +93,8 @@ export default function RegisterScreen() {
         return;
       }
 
-      // FIX: Tambah pengecekan — Supabase kadang return user tapi session null
-      // kalau email confirmation diaktifkan. Ini bukan error, justru flow yang benar.
       if (data?.user) {
         if (data.session) {
-          // Langsung aktif (email confirmation dimatikan di Supabase)
           await claimPendingAnonymousData();
           await supabase.from('profile').upsert({
             id: data.user.id,
@@ -105,7 +104,6 @@ export default function RegisterScreen() {
             is_auth: true,
           }, { onConflict: 'id' });
         }
-        // Kalau session null = butuh verifikasi email, tetap lanjut ke pesan sukses
       }
 
       setSuccessMsg('Akun berhasil dibuat! Cek emailmu untuk verifikasi, lalu masuk.');
@@ -131,8 +129,6 @@ export default function RegisterScreen() {
         resizeMode="cover"
       />
 
-      {/* FIX: Ganti router.replace('/login') -> router.back()
-          User bisa datang dari b-login atau login, jadi back() lebih aman */}
       <TouchableOpacity
         style={[
           styles.headerBackBtn,
@@ -145,117 +141,122 @@ export default function RegisterScreen() {
         <Icon name="arrow-back" size={24} color={colors.ink} />
       </TouchableOpacity>
 
-      <ScrollView
-        contentContainerStyle={styles.loginScrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.loginHeader}>
-          <Text style={styles.loginHeaderTitle}>Daftar</Text>
-          <Text style={styles.loginHeaderSubtitle}>
-            Buat akun baru untuk memulai perjalananmu.
-          </Text>
-        </View>
-
-        <View style={styles.formCard}>
-          {errorMsg ? (
-            <View style={{ backgroundColor: '#FFEBEB', padding: 12, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#FFCDCD' }}>
-              <Text style={{ color: colors.accentRed, textAlign: 'center', fontSize: 14, fontFamily: 'Fredoka_400Regular' }}>{errorMsg}</Text>
-            </View>
-          ) : null}
-          {successMsg ? (
-            <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#C8E6C9' }}>
-              <Text style={{ color: colors.ink, textAlign: 'center', fontSize: 14, fontFamily: 'Fredoka_400Regular' }}>{successMsg}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.fieldWrapper}>
-            <Text style={styles.fieldLabel}>Email</Text>
-            <TextInput
-              style={[styles.textInput, emailFocused && styles.textInputFocused]}
-              placeholder="contoh@email.com"
-              placeholderTextColor="rgba(122, 106, 114, 0.6)"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={setEmail}
-              onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
-            />
+        <ScrollView
+          contentContainerStyle={styles.loginScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.loginHeader}>
+            <Text style={styles.loginHeaderTitle}>Daftar</Text>
+            <Text style={styles.loginHeaderSubtitle}>
+              Buat akun baru untuk memulai perjalananmu.
+            </Text>
           </View>
 
-          <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
-            <Text style={styles.fieldLabel}>Password</Text>
-            <View style={{ justifyContent: 'center' }}>
+          <View style={styles.formCard}>
+            {errorMsg ? (
+              <View style={{ backgroundColor: '#FFEBEB', padding: 12, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#FFCDCD' }}>
+                <Text style={{ color: colors.accentRed, textAlign: 'center', fontSize: 14, fontFamily: 'Fredoka_400Regular' }}>{errorMsg}</Text>
+              </View>
+            ) : null}
+            {successMsg ? (
+              <View style={{ backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#C8E6C9' }}>
+                <Text style={{ color: colors.ink, textAlign: 'center', fontSize: 14, fontFamily: 'Fredoka_400Regular' }}>{successMsg}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.fieldWrapper}>
+              <Text style={styles.fieldLabel}>Email</Text>
               <TextInput
-                style={[styles.textInput, passwordFocused && styles.textInputFocused, { paddingRight: 50 }]}
-                placeholder="Masukkan password Anda"
+                style={[styles.textInput, emailFocused && styles.textInputFocused]}
+                placeholder="contoh@email.com"
                 placeholderTextColor="rgba(122, 106, 114, 0.6)"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: 16, height: '100%', justifyContent: 'center' }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-              >
-                <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="rgba(122, 106, 114, 0.6)" />
-              </TouchableOpacity>
             </View>
+
+            <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <View style={{ justifyContent: 'center' }}>
+                <TextInput
+                  style={[styles.textInput, passwordFocused && styles.textInputFocused, { paddingRight: 50 }]}
+                  placeholder="Masukkan password Anda"
+                  placeholderTextColor="rgba(122, 106, 114, 0.6)"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: 16, height: '100%', justifyContent: 'center' }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                >
+                  <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="rgba(122, 106, 114, 0.6)" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
+              <Text style={styles.fieldLabel}>Konfirmasi Password</Text>
+              <View style={{ justifyContent: 'center' }}>
+                <TextInput
+                  style={[styles.textInput, confirmPasswordFocused && styles.textInputFocused, { paddingRight: 50 }]}
+                  placeholder="Konfirmasi password Anda"
+                  placeholderTextColor="rgba(122, 106, 114, 0.6)"
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  onFocus={() => setConfirmPasswordFocused(true)}
+                  onBlur={() => setConfirmPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{ position: 'absolute', right: 16, height: '100%', justifyContent: 'center' }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                >
+                  <Icon name={showConfirmPassword ? 'visibility' : 'visibility-off'} size={24} color="rgba(122, 106, 114, 0.6)" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                (pressed || loading) && styles.primaryButtonPressed,
+              ]}
+              onPress={handleRegister}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel="Daftar"
+            >
+              <Text style={styles.primaryButtonText}>{loading ? 'Memproses...' : 'Daftar'}</Text>
+            </Pressable>
           </View>
 
-          <View style={[styles.fieldWrapper, styles.passwordWrapper]}>
-            <Text style={styles.fieldLabel}>Konfirmasi Password</Text>
-            <View style={{ justifyContent: 'center' }}>
-              <TextInput
-                style={[styles.textInput, confirmPasswordFocused && styles.textInputFocused, { paddingRight: 50 }]}
-                placeholder="Konfirmasi password Anda"
-                placeholderTextColor="rgba(122, 106, 114, 0.6)"
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                onFocus={() => setConfirmPasswordFocused(true)}
-                onBlur={() => setConfirmPasswordFocused(false)}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{ position: 'absolute', right: 16, height: '100%', justifyContent: 'center' }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-              >
-                <Icon name={showConfirmPassword ? 'visibility' : 'visibility-off'} size={24} color="rgba(122, 106, 114, 0.6)" />
+          <View style={styles.loginFooter}>
+            <Text style={styles.footerText}>
+              Sudah punya akun?{' '}
+              <TouchableOpacity onPress={() => router.replace('/login')} activeOpacity={0.7}>
+                <Text style={styles.footerLink}>Masuk</Text>
               </TouchableOpacity>
-            </View>
+            </Text>
           </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryButton,
-              (pressed || loading) && styles.primaryButtonPressed,
-            ]}
-            onPress={handleRegister}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel="Daftar"
-          >
-            <Text style={styles.primaryButtonText}>{loading ? 'Memproses...' : 'Daftar'}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.loginFooter}>
-          <Text style={styles.footerText}>
-            Sudah punya akun?{' '}
-            <TouchableOpacity onPress={() => router.replace('/login')} activeOpacity={0.7}>
-              <Text style={styles.footerLink}>Masuk</Text>
-            </TouchableOpacity>
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

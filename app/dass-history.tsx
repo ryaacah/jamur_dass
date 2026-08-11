@@ -111,43 +111,34 @@ function ChartLegend() {
 
 // Kartu dukungan krisis — hanya dipanggil untuk kategori Berat / Sangat Parah
 function CrisisSupportCard() {
+  // Nomor WhatsApp Layanan Psikologi Kampus UPI.
+  // Format wa.me wajib tanpa spasi/strip/tanda plus, diawali kode negara (62).
+  const PSIKOLOG_WA_NUMBER = '6281122223100';
+
   return (
     <View style={styles.crisisCard}>
       <View style={styles.crisisHeader}>
         <Icon name="favorite" size={20} color={colors.accentRed} />
-        <Text style={styles.crisisTitle}>Butuh bicara dengan seseorang sekarang?</Text>
+        <Text style={styles.crisisTitle}>Kamu tidak sendirian</Text>
       </View>
 
       <Text style={styles.crisisSubtitle}>
-        Layanan ini gratis, rahasia, dan siap membantu 24 jam.
+        Ada psikolog yang bersedia mendengarkan ceritamu, kapan pun kamu siap. Ini pilihanmu — tidak ada yang memaksa.
       </Text>
 
       <TouchableOpacity
         style={styles.crisisButton}
         activeOpacity={0.8}
-        onPress={() => Linking.openURL('tel:119')}
+        onPress={() => Linking.openURL(`https://wa.me/${PSIKOLOG_WA_NUMBER}`)}
         accessibilityRole="button"
-        accessibilityLabel="Hubungi 119 ext 8, layanan SEJIWA"
+        accessibilityLabel="Hubungi psikolog kampus lewat WhatsApp"
       >
-        <Icon name="call" size={18} color="#fff" />
-        <Text style={styles.crisisButtonText}>Hubungi 119 (lalu pilih ext. 8)</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.crisisButton, styles.crisisButtonSecondary]}
-        activeOpacity={0.8}
-        onPress={() => Linking.openURL('https://www.healing119.id')}
-        accessibilityRole="button"
-        accessibilityLabel="Buka website Healing 119 untuk chat"
-      >
-        <Icon name="chat" size={18} color={colors.ink} />
-        <Text style={[styles.crisisButtonText, { color: colors.ink }]}>
-          Chat lewat healing119.id
-        </Text>
+        <Icon name="chat" size={18} color="#fff" />
+        <Text style={styles.crisisButtonText}>Hubungi Psikolog</Text>
       </TouchableOpacity>
 
       <Text style={styles.crisisFooterNote}>
-        Layanan resmi Kementerian Kesehatan RI bersama Ikatan Psikolog Klinis Indonesia.
+        Layanan Psikologi Kampus UPI, tersedia untuk membantumu.
       </Text>
     </View>
   );

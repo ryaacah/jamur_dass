@@ -10,7 +10,6 @@ const MASCOT_IMAGE = require("../assets/images/splash_icon.webp");
 export default function SplashScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      {/* Full-screen background texture */}
       <Image
         source={BG_IMAGE}
         style={styles.bgImage}
@@ -18,12 +17,10 @@ export default function SplashScreen() {
         accessibilityElementsHidden
       />
 
-      {/* Decorative cream blob — bottom left */}
       <View style={styles.blobBottomLeft} />
 
       {/* Main content */}
       <View style={styles.content}>
-        {/* Mushroom mascot */}
         <View style={styles.mascotContainer}>
           <Image
             source={MASCOT_IMAGE}
@@ -33,7 +30,6 @@ export default function SplashScreen() {
           />
         </View>
 
-        {/* Brand name + tagline */}
         <View style={styles.textBlock}>
           <Text style={styles.appName}>Naung</Text>
           <Text style={styles.tagline}>Satu langkah kecil untuk mengenal dirimu lebih dalam.</Text>
